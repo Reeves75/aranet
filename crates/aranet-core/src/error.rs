@@ -39,7 +39,9 @@ pub enum Error {
     InvalidData(String),
 
     /// Invalid history data format.
-    #[error("Invalid history data: {message} (param={param:?}, expected {expected} bytes, got {actual})")]
+    #[error(
+        "Invalid history data: {message} (param={param:?}, expected {expected} bytes, got {actual})"
+    )]
     InvalidHistoryData {
         /// Description of the error.
         message: String,
@@ -203,20 +205,14 @@ impl Error {
     }
 
     /// Create a connection failure with structured reason.
-    pub fn connection_failed(
-        device_id: Option<String>,
-        reason: ConnectionFailureReason,
-    ) -> Self {
+    pub fn connection_failed(device_id: Option<String>, reason: ConnectionFailureReason) -> Self {
         Self::ConnectionFailed { device_id, reason }
     }
 
     /// Create a connection failure with a string reason.
     ///
     /// This is a convenience method that wraps the string in `ConnectionFailureReason::Other`.
-    pub fn connection_failed_str(
-        device_id: Option<String>,
-        reason: impl Into<String>,
-    ) -> Self {
+    pub fn connection_failed_str(device_id: Option<String>, reason: impl Into<String>) -> Self {
         Self::ConnectionFailed {
             device_id,
             reason: ConnectionFailureReason::Other(reason.into()),

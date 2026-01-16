@@ -1,8 +1,11 @@
 # Aranet Roadmap
 
-A complete Rust implementation for Aranet environmental sensors, designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) and beyond.
+A complete Rust implementation for Aranet environmental sensors,
+designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) and beyond.
 
-> **Dependency Policy**: Always use the **latest stable versions** of all libraries, frameworks, and tools. Pin to major versions only (e.g., `btleplug = "0.11"` not `"0.11.4"`). Run `cargo update` regularly. Check [crates.io](https://crates.io) and [lib.rs](https://lib.rs) for current versions before adding dependencies.
+> **Dependency Policy**: Always use the **latest stable versions** of all libraries, frameworks, and tools.
+> Pin to major versions only (e.g., `btleplug = "0.11"` not `"0.11.4"`). Run `cargo update` regularly.
+> Check [crates.io](https://crates.io) and [lib.rs](https://lib.rs) for current versions before adding dependencies.
 
 ---
 
@@ -20,7 +23,10 @@ A complete Rust implementation for Aranet environmental sensors, designed for fe
 **Legend**: [ ] Not started - [~] In progress/partial - [x] Complete
 
 ### What's Working Now
-- **aranet-core**: Complete BLE stack with btleplug 0.11 - scan, connect, device info, current readings, history download (V1+V2), settings read/write, auto-reconnection, streaming, notifications, RSSI, multi-device manager, event system, validation, thresholds, metrics, mock device
+
+- **aranet-core**: Complete BLE stack with btleplug 0.11 - scan, connect, device info, current readings,
+  history download (V1+V2), settings read/write, auto-reconnection, streaming, notifications, RSSI,
+  multi-device manager, event system, validation, thresholds, metrics, mock device
 - **aranet-types**: Shared types for CurrentReading, DeviceInfo, HistoryRecord, Status, DeviceType, all UUIDs
 - **Multi-device support**: Aranet4, Aranet2, Aranet Radon, Aranet Radiation - all parsing implemented and tested
 - **AranetRn+ (Radon)**: Full support including current readings (radon, temp, pressure, humidity) and complete history download with 4-byte radon values
@@ -28,6 +34,7 @@ A complete Rust implementation for Aranet environmental sensors, designed for fe
 - **Hardware tested**: Aranet4 17C3C (FW v1.4.19), AranetRn+ 306B8 (FW v1.12.0)
 
 ### Recent Improvements (Jan 2026)
+
 - Fixed UUID mappings for history characteristics
 - Fixed V2 history parsing (10-byte header format)
 - Added full AranetRn+ sensor support with radon history download
@@ -35,6 +42,7 @@ A complete Rust implementation for Aranet environmental sensors, designed for fe
 - All 179 workspace tests passing (168 run, 15 ignored - require BLE hardware)
 
 ### Next Priority
+
 1. Wire CLI commands to aranet-core (scan, read, history, info work end-to-end)
 2. Add sensor data display to TUI/GUI shells
 3. Implement Web Bluetooth in WASM module
@@ -42,6 +50,7 @@ A complete Rust implementation for Aranet environmental sensors, designed for fe
 ## Vision
 
 Build the definitive Rust ecosystem for Aranet devices:
+
 - **aranet-types** - Platform-agnostic data types (shared by all crates)
 - **aranet-core** - Native BLE client via btleplug
 - **aranet-cli** - Feature-complete command-line interface
@@ -286,6 +295,7 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 ```
 
 **Key Considerations:**
+
 - Web Bluetooth only works in Chrome/Edge (~50% browser support)
 - iOS Safari does NOT support Web Bluetooth (no workaround)
 - Need `wasm-bindgen` for JS interop
@@ -307,6 +317,7 @@ Before building, learn from existing implementations:
 | `aranet4-cli` (quentinms) | Multi-device, JSON output | CLI only, not a library | 0.9 (outdated) |
 
 **Strategy**: Combine the best of all crates with latest dependencies:
+
 - Clean API from `aranet`
 - Advertisement scanning from `aranet-btle`
 - History support from `aranet4`
@@ -434,23 +445,28 @@ aranet/
 ## Testing Strategy
 
 ### Unit Tests
+
 - **aranet-types**: Test data parsing, serialization, type conversions
 - **aranet-core**: Test with mock BLE adapter where possible
 - Run with: `cargo test --workspace`
 
 ### Integration Tests
+
 - Located in `crates/aranet-core/tests/`
 - Require actual BLE hardware (marked with `#[ignore]`)
 - Run with: `cargo test -- --ignored` (when hardware available)
 
 ### CI Testing
+
 - GitHub Actions runs on every PR
 - Tests on: Ubuntu, macOS, Windows
 - Linting: `cargo clippy`, `cargo fmt --check`
 - No hardware tests in CI (no BLE adapter)
 
 ### Hardware Testing Checklist
+
 When testing with real Aranet devices:
+
 - [ ] Aranet4 (new firmware v1.2.0+)
 - [ ] Aranet4 (old firmware pre-1.2.0)
 - [ ] Aranet2 (if available)
@@ -506,19 +522,23 @@ rust-version = "1.90"  # Updated Jan 2026
 ## Resources
 
 ### Protocol Documentation
+
 - [Aranet4-Python UUIDs](https://github.com/Anrijs/Aranet4-Python/blob/master/docs/UUIDs.md)
 - [Aranet4-Python client.py](https://github.com/Anrijs/Aranet4-Python/blob/master/aranet4/client.py)
 
 ### Rust BLE
+
 - [btleplug docs](https://docs.rs/btleplug)
 - [btleplug examples](https://github.com/deviceplug/btleplug/tree/master/examples)
 
 ### Existing Implementations
+
 - [aranet](https://github.com/m1guelpf/aranet) - cleanest API
 - [aranet-btle](https://github.com/DDRBoxman/aranet-btle) - advertisement scanning
 - [aranet4-rs](https://github.com/lpraneis/aranet4-rs) - history support
 
 ### Web Bluetooth
+
 - [Sensor Pilot](https://github.com/kasparsd/sensor-pilot) - JS reference
 - [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 

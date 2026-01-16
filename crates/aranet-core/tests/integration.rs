@@ -210,8 +210,8 @@ fn test_measurement_interval() {
 // Mock-based integration tests (no BLE hardware required)
 // =============================================================================
 
-use aranet_core::{AranetDevice, MockDevice, MockDeviceBuilder};
 use aranet_core::history::HistoryOptions;
+use aranet_core::{AranetDevice, MockDevice, MockDeviceBuilder};
 use aranet_types::{DeviceType, HistoryRecord};
 
 /// Test full device lifecycle: connect -> read -> disconnect
@@ -243,7 +243,10 @@ async fn test_mock_device_full_lifecycle() {
     assert_eq!(reading.battery, 90);
 
     // Read device info
-    let info = device.read_device_info().await.expect("Device info should succeed");
+    let info = device
+        .read_device_info()
+        .await
+        .expect("Device info should succeed");
     assert_eq!(info.name, "Test Aranet4");
     assert!(info.manufacturer.contains("SAF"));
 
@@ -252,7 +255,10 @@ async fn test_mock_device_full_lifecycle() {
     assert!(rssi < 0); // RSSI is negative dBm
 
     // Disconnect
-    device.disconnect().await.expect("Disconnect should succeed");
+    device
+        .disconnect()
+        .await
+        .expect("Disconnect should succeed");
     assert!(!device.is_connected().await);
 
     // Verify operations fail after disconnect
@@ -285,19 +291,26 @@ async fn test_mock_device_history_download() {
     device.add_history(records.clone()).await;
 
     // Get history info
-    let info = device.get_history_info().await.expect("History info should succeed");
+    let info = device
+        .get_history_info()
+        .await
+        .expect("History info should succeed");
     assert_eq!(info.total_readings, 10);
 
     // Download all history
-    let downloaded = device.download_history().await.expect("Download should succeed");
+    let downloaded = device
+        .download_history()
+        .await
+        .expect("Download should succeed");
     assert_eq!(downloaded.len(), 10);
     assert_eq!(downloaded[0].co2, 800);
 
     // Download with options (partial range)
-    let options = HistoryOptions::default()
-        .start_index(2)
-        .end_index(5);
-    let partial = device.download_history_with_options(options).await.expect("Partial download should succeed");
+    let options = HistoryOptions::default().start_index(2).end_index(5);
+    let partial = device
+        .download_history_with_options(options)
+        .await
+        .expect("Partial download should succeed");
     assert_eq!(partial.len(), 3); // indices 2, 3, 4
 }
 
@@ -335,12 +348,19 @@ async fn test_mock_device_permanent_failure() {
     assert!(reading.is_ok());
 
     // Set permanent failure mode
-    device.set_should_fail(true, Some("Simulated BLE error")).await;
+    device
+        .set_should_fail(true, Some("Simulated BLE error"))
+        .await;
 
     // All operations should now fail
     let result = device.read_current().await;
     assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Simulated BLE error"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("Simulated BLE error")
+    );
 
     let result = device.read_battery().await;
     assert!(result.is_err());
@@ -356,10 +376,7 @@ async fn test_mock_device_permanent_failure() {
 /// Test reading updates during device lifetime
 #[tokio::test]
 async fn test_mock_device_reading_updates() {
-    let device = MockDeviceBuilder::new()
-        .co2(800)
-        .temperature(22.0)
-        .build();
+    let device = MockDeviceBuilder::new().co2(800).temperature(22.0).build();
 
     // Initial reading
     let reading1 = device.read_current().await.unwrap();
@@ -389,18 +406,30 @@ async fn test_mock_device_settings() {
     let device = MockDeviceBuilder::new().build();
 
     // Get initial interval
-    let interval = device.get_interval().await.expect("Get interval should succeed");
+    let interval = device
+        .get_interval()
+        .await
+        .expect("Get interval should succeed");
     assert_eq!(interval, MeasurementInterval::FiveMinutes);
 
     // Set new interval
-    device.set_interval(MeasurementInterval::TenMinutes).await.expect("Set interval should succeed");
+    device
+        .set_interval(MeasurementInterval::TenMinutes)
+        .await
+        .expect("Set interval should succeed");
 
     // Verify change
-    let new_interval = device.get_interval().await.expect("Get interval should succeed");
+    let new_interval = device
+        .get_interval()
+        .await
+        .expect("Get interval should succeed");
     assert_eq!(new_interval, MeasurementInterval::TenMinutes);
 
     // Get calibration data
-    let calibration = device.get_calibration().await.expect("Get calibration should succeed");
+    let calibration = device
+        .get_calibration()
+        .await
+        .expect("Get calibration should succeed");
     assert!(calibration.co2_offset.is_some() || calibration.co2_offset.is_none()); // Just verify it returns
 }
 
@@ -413,7 +442,10 @@ async fn test_aranet_device_trait_polymorphism() {
     }
 
     async fn get_identity<D: AranetDevice>(device: &D) -> (Option<String>, String) {
-        (device.name().map(String::from), device.address().to_string())
+        (
+            device.name().map(String::from),
+            device.address().to_string(),
+        )
     }
 
     let device = MockDeviceBuilder::new()
@@ -443,5 +475,9 @@ async fn test_mock_device_latency_simulation() {
     let elapsed = start.elapsed();
 
     // Should take at least 50ms (with some tolerance)
-    assert!(elapsed >= Duration::from_millis(40), "Expected at least 40ms, got {:?}", elapsed);
+    assert!(
+        elapsed >= Duration::from_millis(40),
+        "Expected at least 40ms, got {:?}",
+        elapsed
+    );
 }

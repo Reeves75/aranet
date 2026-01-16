@@ -309,8 +309,11 @@ impl ReconnectingDevice {
     /// callers, while this method handles the trait implementation requirements.
     async fn run_with_reconnect<'a, T, F>(&'a self, f: F) -> Result<T>
     where
-        F: for<'b> Fn(&'b Device) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T>> + Send + 'b>>
-            + Send
+        F: for<'b> Fn(
+                &'b Device,
+            ) -> std::pin::Pin<
+                Box<dyn std::future::Future<Output = Result<T>> + Send + 'b>,
+            > + Send
             + Sync,
         T: Send,
     {

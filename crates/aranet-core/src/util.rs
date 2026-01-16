@@ -59,4 +59,3 @@ mod tests {
         assert_eq!(address, "00:00:00:00:00:00");
     }
 }
-

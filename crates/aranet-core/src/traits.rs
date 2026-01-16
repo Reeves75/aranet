@@ -106,4 +106,3 @@ pub trait AranetDevice: Send + Sync {
     /// Read calibration data from the device.
     async fn get_calibration(&self) -> Result<CalibrationData>;
 }
-

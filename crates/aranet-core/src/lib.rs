@@ -95,7 +95,7 @@ pub use device::Device;
 pub use error::{ConnectionFailureReason, DeviceNotFoundReason, Error, Result};
 pub use history::{HistoryInfo, HistoryOptions, HistoryParam};
 pub use readings::ExtendedReading;
-pub use scan::{scan_with_retry, DiscoveredDevice, ScanOptions};
+pub use scan::{DiscoveredDevice, ScanOptions, scan_with_retry};
 pub use settings::{BluetoothRange, CalibrationData, DeviceSettings, MeasurementInterval};
 pub use traits::AranetDevice;
 
@@ -128,7 +128,7 @@ pub use traits::AranetDevice;
 pub type SharedDevice = std::sync::Arc<Device>;
 
 // New module exports
-pub use advertisement::{parse_advertisement, AdvertisementData};
+pub use advertisement::{AdvertisementData, parse_advertisement};
 pub use commands::{
     HISTORY_V1_REQUEST, HISTORY_V2_REQUEST, SET_BLUETOOTH_RANGE, SET_INTERVAL, SET_SMART_HOME,
 };
@@ -138,7 +138,7 @@ pub use manager::{DeviceManager, ManagedDevice, ManagerConfig};
 pub use metrics::{ConnectionMetrics, OperationMetrics};
 pub use mock::{MockDevice, MockDeviceBuilder};
 pub use reconnect::{ReconnectOptions, ReconnectingDevice};
-pub use retry::{with_retry, RetryConfig};
+pub use retry::{RetryConfig, with_retry};
 pub use streaming::{ReadingStream, StreamOptions, StreamOptionsBuilder};
 pub use thresholds::{Co2Level, ThresholdConfig, Thresholds};
 pub use util::{create_identifier, format_peripheral_id};

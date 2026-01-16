@@ -71,7 +71,12 @@ pub struct HistoryProgress {
 
 impl HistoryProgress {
     /// Create a new progress struct.
-    pub fn new(param: HistoryParam, param_idx: usize, total_params: usize, total_values: usize) -> Self {
+    pub fn new(
+        param: HistoryParam,
+        param_idx: usize,
+        total_params: usize,
+        total_values: usize,
+    ) -> Self {
         Self {
             current_param: param,
             param_index: param_idx,
@@ -651,7 +656,11 @@ impl Device {
     where
         F: FnMut(usize),
     {
-        let value_size = if param == HistoryParam::Humidity { 1 } else { 2 };
+        let value_size = if param == HistoryParam::Humidity {
+            1
+        } else {
+            2
+        };
 
         self.download_param_history_generic_with_progress(
             param,
@@ -958,8 +967,8 @@ mod tests {
 
     #[test]
     fn test_history_options_with_progress() {
-        use std::sync::atomic::{AtomicUsize, Ordering};
         use std::sync::Arc;
+        use std::sync::atomic::{AtomicUsize, Ordering};
 
         let call_count = Arc::new(AtomicUsize::new(0));
         let call_count_clone = Arc::clone(&call_count);

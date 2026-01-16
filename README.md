@@ -1,6 +1,7 @@
 # ARANET
 
-Rust implementation for Aranet environmental sensors. Connect to your Aranet devices via Bluetooth LE to read measurements, download history, and monitor air quality.
+Rust implementation for Aranet environmental sensors.
+Connect to your Aranet devices via Bluetooth LE to read measurements, download history, and monitor air quality.
 
 [![CI](https://github.com/cameronrye/aranet/workflows/CI/badge.svg)](https://github.com/cameronrye/aranet/actions)
 [![crates.io](https://img.shields.io/crates/v/aranet-core.svg)](https://crates.io/crates/aranet-core)
@@ -87,7 +88,7 @@ aranet/
 
 ## Requirements
 
-- **Rust 1.90+** 
+- **Rust 1.90+**
 - **Bluetooth adapter** with BLE support
 - **Platform support:**
   - macOS

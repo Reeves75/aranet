@@ -222,15 +222,13 @@ impl DeviceManager {
             let mut devices = self.devices.write().await;
 
             // Get or create the managed device entry
-            let managed = devices
-                .entry(identifier.to_string())
-                .or_insert_with(|| {
-                    info!("Adding device to manager: {}", identifier);
-                    ManagedDevice::with_reconnect_options(
-                        identifier,
-                        self.config.default_reconnect_options.clone(),
-                    )
-                });
+            let managed = devices.entry(identifier.to_string()).or_insert_with(|| {
+                info!("Adding device to manager: {}", identifier);
+                ManagedDevice::with_reconnect_options(
+                    identifier,
+                    self.config.default_reconnect_options.clone(),
+                )
+            });
 
             // If already connected, nothing to do
             if managed.device.is_some() {
@@ -258,7 +256,10 @@ impl DeviceManager {
                 // Check if another task connected while we were connecting
                 if managed.device.is_some() {
                     // Another task beat us to it - disconnect our connection
-                    debug!("Another task connected {} while we were connecting, discarding our connection", identifier);
+                    debug!(
+                        "Another task connected {} while we were connecting, discarding our connection",
+                        identifier
+                    );
                     drop(devices); // Release lock before async disconnect
                     let _ = device.disconnect().await;
                     return Ok(());
@@ -352,10 +353,7 @@ impl DeviceManager {
         // Collect device handles while holding the lock briefly
         let device_arcs: Vec<Arc<Device>> = {
             let devices = self.devices.read().await;
-            devices
-                .values()
-                .filter_map(|m| m.device_arc())
-                .collect()
+            devices.values().filter_map(|m| m.device_arc()).collect()
         };
         // Lock is released here
 
@@ -408,9 +406,7 @@ impl DeviceManager {
             let devices = self.devices.read().await;
             devices
                 .iter()
-                .filter_map(|(id, managed)| {
-                    managed.device_arc().map(|d| (id.clone(), d))
-                })
+                .filter_map(|(id, managed)| managed.device_arc().map(|d| (id.clone(), d)))
                 .collect()
         };
         // Lock is released here
@@ -442,9 +438,10 @@ impl DeviceManager {
             let mut devices = self.devices.write().await;
             for (id, result) in &read_results {
                 if let Ok(reading) = result
-                    && let Some(managed) = devices.get_mut(id) {
-                        managed.last_reading = Some(reading.clone());
-                    }
+                    && let Some(managed) = devices.get_mut(id)
+                {
+                    managed.last_reading = Some(reading.clone());
+                }
             }
         }
 
@@ -479,9 +476,7 @@ impl DeviceManager {
             let mut devices = self.devices.write().await;
             devices
                 .iter_mut()
-                .filter_map(|(id, managed)| {
-                    managed.device.take().map(|d| (id.clone(), d))
-                })
+                .filter_map(|(id, managed)| managed.device.take().map(|d| (id.clone(), d)))
                 .collect()
         };
 
@@ -522,9 +517,12 @@ impl DeviceManager {
     pub fn try_is_connected(&self, identifier: &str) -> Option<bool> {
         // Try to acquire the lock without blocking
         match self.devices.try_read() {
-            Ok(devices) => {
-                Some(devices.get(identifier).map(|m| m.has_device()).unwrap_or(false))
-            }
+            Ok(devices) => Some(
+                devices
+                    .get(identifier)
+                    .map(|m| m.has_device())
+                    .unwrap_or(false),
+            ),
             Err(_) => None, // Lock was held, couldn't check
         }
     }

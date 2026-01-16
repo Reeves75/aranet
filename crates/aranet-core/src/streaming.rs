@@ -108,12 +108,10 @@ impl StreamOptions {
 }
 
 /// Builder for StreamOptions.
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct StreamOptionsBuilder {
     options: StreamOptions,
 }
-
 
 impl StreamOptionsBuilder {
     /// Set the polling interval.
@@ -303,7 +301,10 @@ impl ReadingStream {
     /// **Deprecated:** Use [`has_unexpectedly_stopped()`](Self::has_unexpectedly_stopped) instead,
     /// which has clearer semantics. This method may return `true` even when the stream
     /// stopped due to `max_consecutive_failures` being reached, not just panics.
-    #[deprecated(since = "0.2.0", note = "Use has_unexpectedly_stopped() instead for clearer semantics")]
+    #[deprecated(
+        since = "0.2.0",
+        note = "Use has_unexpectedly_stopped() instead for clearer semantics"
+    )]
     pub fn has_panicked(&self) -> bool {
         self.has_unexpectedly_stopped()
     }
@@ -428,9 +429,7 @@ mod tests {
     #[test]
     fn test_stream_options_builder_partial() {
         // Only set some options, others should be defaults
-        let opts = StreamOptions::builder()
-            .include_errors(true)
-            .build();
+        let opts = StreamOptions::builder().include_errors(true).build();
 
         assert_eq!(opts.poll_interval, Duration::from_secs(1)); // default
         assert_eq!(opts.buffer_size, 16); // default

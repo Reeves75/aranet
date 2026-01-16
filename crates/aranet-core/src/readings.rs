@@ -701,7 +701,10 @@ mod tests {
 
         let cloned = extended.clone();
         assert_eq!(cloned.reading.radon, extended.reading.radon);
-        assert_eq!(cloned.reading.radiation_rate, extended.reading.radiation_rate);
+        assert_eq!(
+            cloned.reading.radiation_rate,
+            extended.reading.radiation_rate
+        );
         assert_eq!(cloned.reading.co2, extended.reading.co2);
         assert_eq!(cloned.radiation_duration, extended.radiation_duration);
     }
@@ -715,7 +718,8 @@ mod tests {
             0x1E, 0x00, // Age = 30 seconds
             0x5A, // Battery = 90%
             0xE8, 0x03, 0x00, 0x00, // Dose rate = 1000 nSv/h = 1.0 µSv/h
-            0x40, 0x42, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, // Total dose = 1,000,000 nSv = 1.0 mSv
+            0x40, 0x42, 0x0F, 0x00, 0x00, 0x00, 0x00,
+            0x00, // Total dose = 1,000,000 nSv = 1.0 mSv
             0x10, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Duration = 3600 seconds
             0x01, // Status = Green
         ];
@@ -749,8 +753,10 @@ mod tests {
             0x0A, 0x00, // Age = 10 seconds
             0x64, // Battery = 100%
             0x10, 0x27, 0x00, 0x00, // Dose rate = 10,000 nSv/h = 10.0 µSv/h
-            0x00, 0xE1, 0xF5, 0x05, 0x00, 0x00, 0x00, 0x00, // Total dose = 100,000,000 nSv = 100.0 mSv
-            0x80, 0x51, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Duration = 86400 seconds (1 day)
+            0x00, 0xE1, 0xF5, 0x05, 0x00, 0x00, 0x00,
+            0x00, // Total dose = 100,000,000 nSv = 100.0 mSv
+            0x80, 0x51, 0x01, 0x00, 0x00, 0x00, 0x00,
+            0x00, // Duration = 86400 seconds (1 day)
             0x02, // Status = Yellow
         ];
 

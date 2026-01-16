@@ -38,4 +38,3 @@ mod tests {
         assert_eq!(SET_BLUETOOTH_RANGE, 0x92);
     }
 }
-

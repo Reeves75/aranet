@@ -251,7 +251,10 @@ impl MockDevice {
 
         let history = self.history.read().await;
         let start = options.start_index.unwrap_or(0) as usize;
-        let end = options.end_index.map(|e| e as usize).unwrap_or(history.len());
+        let end = options
+            .end_index
+            .map(|e| e as usize)
+            .unwrap_or(history.len());
 
         // Report progress if callback provided
         if let Some(ref _callback) = options.progress_callback {
@@ -313,15 +316,11 @@ impl MockDevice {
         // Check for transient failures first
         if self.remaining_failures.load(Ordering::Relaxed) > 0 {
             self.remaining_failures.fetch_sub(1, Ordering::Relaxed);
-            return Err(Error::InvalidData(
-                self.fail_message.read().await.clone(),
-            ));
+            return Err(Error::InvalidData(self.fail_message.read().await.clone()));
         }
 
         if self.should_fail.load(Ordering::Relaxed) {
-            Err(Error::InvalidData(
-                self.fail_message.read().await.clone(),
-            ))
+            Err(Error::InvalidData(self.fail_message.read().await.clone()))
         } else {
             Ok(())
         }
@@ -383,7 +382,8 @@ impl MockDevice {
     /// Each read operation will be delayed by this duration.
     /// Set to `Duration::ZERO` to disable latency simulation.
     pub fn set_read_latency(&self, latency: Duration) {
-        self.read_latency_ms.store(latency.as_millis() as u64, Ordering::Relaxed);
+        self.read_latency_ms
+            .store(latency.as_millis() as u64, Ordering::Relaxed);
     }
 
     /// Set simulated connect latency.
@@ -391,7 +391,8 @@ impl MockDevice {
     /// Connect operations will be delayed by this duration.
     /// Set to `Duration::ZERO` to disable latency simulation.
     pub fn set_connect_latency(&self, latency: Duration) {
-        self.connect_latency_ms.store(latency.as_millis() as u64, Ordering::Relaxed);
+        self.connect_latency_ms
+            .store(latency.as_millis() as u64, Ordering::Relaxed);
     }
 
     /// Configure transient failures.
@@ -416,7 +417,8 @@ impl MockDevice {
 
     /// Reset transient failure counter.
     pub fn reset_transient_failures(&self) {
-        self.remaining_failures.store(self.fail_count.load(Ordering::Relaxed), Ordering::Relaxed);
+        self.remaining_failures
+            .store(self.fail_count.load(Ordering::Relaxed), Ordering::Relaxed);
     }
 
     /// Get the number of remaining transient failures.

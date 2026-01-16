@@ -368,11 +368,6 @@ mod tests {
         let data: [u8; 10] = [0xF4; 10];
         let result = parse_advertisement(&data);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("16 bytes")
-        );
+        assert!(result.unwrap_err().to_string().contains("16 bytes"));
     }
 }

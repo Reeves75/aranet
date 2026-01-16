@@ -90,8 +90,8 @@ impl RetryConfig {
 
     /// Calculate delay for a given attempt number.
     fn delay_for_attempt(&self, attempt: u32) -> Duration {
-        let base_delay = self.initial_delay.as_secs_f64()
-            * self.backoff_multiplier.powi(attempt as i32);
+        let base_delay =
+            self.initial_delay.as_secs_f64() * self.backoff_multiplier.powi(attempt as i32);
         let capped_delay = base_delay.min(self.max_delay.as_secs_f64());
 
         let final_delay = if self.jitter {
@@ -132,10 +132,7 @@ where
         match operation().await {
             Ok(result) => {
                 if attempt > 0 {
-                    debug!(
-                        "{} succeeded after {} retries",
-                        operation_name, attempt
-                    );
+                    debug!("{} succeeded after {} retries", operation_name, attempt);
                 }
                 return Ok(result);
             }
@@ -161,7 +158,8 @@ where
         }
     }
 
-    Err(last_error.unwrap_or_else(|| Error::InvalidData("Operation failed with no error".to_string())))
+    Err(last_error
+        .unwrap_or_else(|| Error::InvalidData("Operation failed with no error".to_string())))
 }
 
 /// Check if an error is retryable.
@@ -210,8 +208,8 @@ fn is_retryable(error: &Error) -> bool {
 mod tests {
     use super::*;
     use crate::error::{ConnectionFailureReason, DeviceNotFoundReason};
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     #[test]
     fn test_retry_config_default() {
@@ -346,4 +344,3 @@ mod tests {
         assert_eq!(attempts.load(Ordering::SeqCst), 1); // No retries
     }
 }
-

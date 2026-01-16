@@ -140,4 +140,3 @@ impl Drop for SharedDeviceGuard {
         }
     }
 }
-

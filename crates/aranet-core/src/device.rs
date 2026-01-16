@@ -13,7 +13,7 @@ use tracing::{debug, info};
 use uuid::Uuid;
 
 use crate::error::{Error, Result};
-use crate::scan::{find_device, ScanOptions};
+use crate::scan::{ScanOptions, find_device};
 use crate::traits::AranetDevice;
 use crate::util::{create_identifier, format_peripheral_id};
 use crate::uuid::{
@@ -254,7 +254,10 @@ impl Device {
             }
         }
 
-        Err(Error::characteristic_not_found(uuid.to_string(), service_count))
+        Err(Error::characteristic_not_found(
+            uuid.to_string(),
+            service_count,
+        ))
     }
 
     /// Read a characteristic value by UUID.
@@ -350,7 +353,15 @@ impl Device {
         }
 
         // Read all characteristics in parallel for better performance
-        let (name_result, model_result, serial_result, firmware_result, hardware_result, software_result, manufacturer_result) = tokio::join!(
+        let (
+            name_result,
+            model_result,
+            serial_result,
+            firmware_result,
+            hardware_result,
+            software_result,
+            manufacturer_result,
+        ) = tokio::join!(
             self.read_characteristic(DEVICE_NAME),
             self.read_characteristic(MODEL_NUMBER),
             self.read_characteristic(SERIAL_NUMBER),

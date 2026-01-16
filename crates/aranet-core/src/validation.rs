@@ -109,10 +109,18 @@ impl std::fmt::Display for ValidationWarning {
                 write!(f, "Radon {} Bq/m³ exceeds maximum {} Bq/m³", value, max)
             }
             ValidationWarning::RadiationRateTooHigh { value, max } => {
-                write!(f, "Radiation rate {} µSv/h exceeds maximum {} µSv/h", value, max)
+                write!(
+                    f,
+                    "Radiation rate {} µSv/h exceeds maximum {} µSv/h",
+                    value, max
+                )
             }
             ValidationWarning::RadiationTotalTooHigh { value, max } => {
-                write!(f, "Radiation total {} µSv exceeds maximum {} µSv", value, max)
+                write!(
+                    f,
+                    "Radiation total {} µSv exceeds maximum {} µSv",
+                    value, max
+                )
             }
         }
     }
@@ -192,10 +200,10 @@ impl Default for ValidatorConfig {
             co2_max: 10000, // Very high but possible in some scenarios
             temperature_min: -40.0,
             temperature_max: 85.0,
-            pressure_min: 300.0,  // Very high altitude
-            pressure_max: 1100.0, // Sea level or below
-            radon_max: 1000,      // WHO action level is 100-300 Bq/m³
-            radiation_rate_max: 100.0, // Normal background is ~0.1-0.2 µSv/h
+            pressure_min: 300.0,           // Very high altitude
+            pressure_max: 1100.0,          // Sea level or below
+            radon_max: 1000,               // WHO action level is 100-300 Bq/m³
+            radiation_rate_max: 100.0,     // Normal background is ~0.1-0.2 µSv/h
             radiation_total_max: 100000.0, // Reasonable upper bound for accumulated dose
             warn_on_zero_co2: true,
             warn_on_all_zeros: true,
@@ -320,7 +328,7 @@ impl ValidatorConfig {
             temperature_max: 50.0,
             pressure_min: 800.0,
             pressure_max: 1100.0,
-            radon_max: 300,       // WHO action level
+            radon_max: 300, // WHO action level
             radiation_rate_max: 10.0,
             radiation_total_max: 10000.0,
             warn_on_zero_co2: true,
@@ -357,9 +365,9 @@ impl ValidatorConfig {
             temperature_max: 60.0, // Aranet4 operating range
             pressure_min: 300.0,
             pressure_max: 1100.0,
-            radon_max: 0,              // Not applicable
-            radiation_rate_max: 0.0,   // Not applicable
-            radiation_total_max: 0.0,  // Not applicable
+            radon_max: 0,             // Not applicable
+            radiation_rate_max: 0.0,  // Not applicable
+            radiation_total_max: 0.0, // Not applicable
             warn_on_zero_co2: true,
             warn_on_all_zeros: true,
         }
@@ -378,12 +386,12 @@ impl ValidatorConfig {
             co2_max: 65535, // Not applicable
             temperature_min: -40.0,
             temperature_max: 60.0,
-            pressure_min: 0.0,    // Not applicable
-            pressure_max: 2000.0, // Not applicable
-            radon_max: 0,              // Not applicable
-            radiation_rate_max: 0.0,   // Not applicable
-            radiation_total_max: 0.0,  // Not applicable
-            warn_on_zero_co2: false, // CO2 is not measured
+            pressure_min: 0.0,        // Not applicable
+            pressure_max: 2000.0,     // Not applicable
+            radon_max: 0,             // Not applicable
+            radiation_rate_max: 0.0,  // Not applicable
+            radiation_total_max: 0.0, // Not applicable
+            warn_on_zero_co2: false,  // CO2 is not measured
             warn_on_all_zeros: false,
         }
     }
@@ -403,9 +411,9 @@ impl ValidatorConfig {
             temperature_max: 60.0,
             pressure_min: 300.0,
             pressure_max: 1100.0,
-            radon_max: 1000, // WHO action level is 100-300 Bq/m³
-            radiation_rate_max: 0.0,   // Not applicable
-            radiation_total_max: 0.0,  // Not applicable
+            radon_max: 1000,          // WHO action level is 100-300 Bq/m³
+            radiation_rate_max: 0.0,  // Not applicable
+            radiation_total_max: 0.0, // Not applicable
             warn_on_zero_co2: false,
             warn_on_all_zeros: false,
         }
@@ -426,8 +434,8 @@ impl ValidatorConfig {
             temperature_max: 60.0,
             pressure_min: 300.0,
             pressure_max: 1100.0,
-            radon_max: 0, // Not applicable
-            radiation_rate_max: 100.0, // Normal background is ~0.1-0.2 µSv/h
+            radon_max: 0,                  // Not applicable
+            radiation_rate_max: 100.0,     // Normal background is ~0.1-0.2 µSv/h
             radiation_total_max: 100000.0, // Reasonable upper bound
             warn_on_zero_co2: false,
             warn_on_all_zeros: false,
@@ -563,30 +571,33 @@ impl ReadingValidator {
 
         // Check radon (if present)
         if let Some(radon) = reading.radon
-            && radon > self.config.radon_max {
-                warnings.push(ValidationWarning::RadonTooHigh {
-                    value: radon,
-                    max: self.config.radon_max,
-                });
-            }
+            && radon > self.config.radon_max
+        {
+            warnings.push(ValidationWarning::RadonTooHigh {
+                value: radon,
+                max: self.config.radon_max,
+            });
+        }
 
         // Check radiation rate (if present)
         if let Some(rate) = reading.radiation_rate
-            && rate > self.config.radiation_rate_max {
-                warnings.push(ValidationWarning::RadiationRateTooHigh {
-                    value: rate,
-                    max: self.config.radiation_rate_max,
-                });
-            }
+            && rate > self.config.radiation_rate_max
+        {
+            warnings.push(ValidationWarning::RadiationRateTooHigh {
+                value: rate,
+                max: self.config.radiation_rate_max,
+            });
+        }
 
         // Check radiation total (if present)
         if let Some(total) = reading.radiation_total
-            && total > self.config.radiation_total_max {
-                warnings.push(ValidationWarning::RadiationTotalTooHigh {
-                    value: total,
-                    max: self.config.radiation_total_max,
-                });
-            }
+            && total > self.config.radiation_total_max
+        {
+            warnings.push(ValidationWarning::RadiationTotalTooHigh {
+                value: total,
+                max: self.config.radiation_total_max,
+            });
+        }
 
         if warnings.is_empty() {
             ValidationResult::valid()
