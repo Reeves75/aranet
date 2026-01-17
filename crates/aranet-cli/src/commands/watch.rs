@@ -12,8 +12,8 @@ use aranet_core::Device;
 
 use crate::cli::OutputFormat;
 use crate::format::{
-    format_reading_json, format_watch_csv_header, format_watch_csv_line, format_watch_line,
-    FormatOptions,
+    FormatOptions, format_reading_json, format_watch_csv_header, format_watch_csv_line,
+    format_watch_line,
 };
 use crate::util::{require_device, write_output};
 
@@ -80,10 +80,7 @@ pub async fn cmd_watch(
                         current_device.as_ref().unwrap()
                     }
                     Err(e) => {
-                        eprintln!(
-                            "Connection failed: {}. Retrying in {}s...",
-                            e, backoff_secs
-                        );
+                        eprintln!("Connection failed: {}. Retrying in {}s...", e, backoff_secs);
                         current_device = None;
 
                         // Wait with graceful shutdown support using exponential backoff
@@ -150,4 +147,3 @@ pub async fn cmd_watch(
         }
     }
 }
-

@@ -60,4 +60,3 @@ pub async fn cmd_set(
     device.disconnect().await.ok();
     Ok(())
 }
-

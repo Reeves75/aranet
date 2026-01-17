@@ -67,4 +67,3 @@ mod tests {
         assert!(err.contains("ARANET_DEVICE"));
     }
 }
-

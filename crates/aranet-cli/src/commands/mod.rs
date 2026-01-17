@@ -15,4 +15,3 @@ pub use scan::cmd_scan;
 pub use set::cmd_set;
 pub use status::cmd_status;
 pub use watch::cmd_watch;
-

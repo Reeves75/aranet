@@ -248,7 +248,9 @@ pub enum BluetoothRangeSetting {
 
 /// Parse interval value with validation
 fn parse_interval(s: &str) -> Result<u8, String> {
-    let minutes: u8 = s.parse().map_err(|_| format!("'{}' is not a valid number", s))?;
+    let minutes: u8 = s
+        .parse()
+        .map_err(|_| format!("'{}' is not a valid number", s))?;
     match minutes {
         1 | 2 | 5 | 10 => Ok(minutes),
         _ => Err(format!(

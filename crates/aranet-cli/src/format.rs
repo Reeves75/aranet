@@ -100,11 +100,7 @@ impl FormatOptions {
     /// Convert radon value for CSV/JSON output.
     #[must_use]
     pub fn convert_radon(&self, bq: u32) -> f32 {
-        if self.bq {
-            bq as f32
-        } else {
-            bq_to_pci(bq)
-        }
+        if self.bq { bq as f32 } else { bq_to_pci(bq) }
     }
 }
 
@@ -281,13 +277,19 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
 
     // Radon averages (AranetRn+)
     if let Some(avg_24h) = reading.radon_avg_24h {
-        output.push_str(&format!("  24h Avg:   {:>10}\n", opts.format_radon(avg_24h)));
+        output.push_str(&format!(
+            "  24h Avg:   {:>10}\n",
+            opts.format_radon(avg_24h)
+        ));
     }
     if let Some(avg_7d) = reading.radon_avg_7d {
         output.push_str(&format!("  7d Avg:    {:>10}\n", opts.format_radon(avg_7d)));
     }
     if let Some(avg_30d) = reading.radon_avg_30d {
-        output.push_str(&format!("  30d Avg:   {:>10}\n", opts.format_radon(avg_30d)));
+        output.push_str(&format!(
+            "  30d Avg:   {:>10}\n",
+            opts.format_radon(avg_30d)
+        ));
     }
 
     // Radiation (Aranet Radiation)
@@ -300,7 +302,10 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
 
     // Common fields
     if reading.temperature != 0.0 {
-        output.push_str(&format!("Temperature: {:>8}\n", opts.format_temp(reading.temperature)));
+        output.push_str(&format!(
+            "Temperature: {:>8}\n",
+            opts.format_temp(reading.temperature)
+        ));
     }
     if reading.humidity > 0 {
         output.push_str(&format!("Humidity:    {:>5}%\n", reading.humidity));
@@ -317,10 +322,23 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
 
 #[must_use]
 pub fn format_reading_csv(reading: &CurrentReading, opts: &FormatOptions) -> String {
-    let temp_header = if opts.fahrenheit { "temperature_f" } else { "temperature_c" };
-    let radon_value = reading.radon.map(|r| format!("{:.2}", opts.convert_radon(r))).unwrap_or_default();
-    let radiation_rate = reading.radiation_rate.map(|r| format!("{:.3}", r)).unwrap_or_default();
-    let radiation_total = reading.radiation_total.map(|r| format!("{:.3}", r)).unwrap_or_default();
+    let temp_header = if opts.fahrenheit {
+        "temperature_f"
+    } else {
+        "temperature_c"
+    };
+    let radon_value = reading
+        .radon
+        .map(|r| format!("{:.2}", opts.convert_radon(r)))
+        .unwrap_or_default();
+    let radiation_rate = reading
+        .radiation_rate
+        .map(|r| format!("{:.3}", r))
+        .unwrap_or_default();
+    let radiation_total = reading
+        .radiation_total
+        .map(|r| format!("{:.3}", r))
+        .unwrap_or_default();
 
     if opts.no_header {
         format!(
@@ -505,7 +523,11 @@ pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> S
     // Detect device type from first record
     let is_radon = history.first().is_some_and(|r| r.radon.is_some());
 
-    let temp_header = if opts.fahrenheit { "Temp (°F)" } else { "Temp (°C)" };
+    let temp_header = if opts.fahrenheit {
+        "Temp (°F)"
+    } else {
+        "Temp (°C)"
+    };
     let mut output = format!("History ({} records):\n\n", history.len());
 
     if is_radon {
@@ -513,7 +535,8 @@ pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> S
             "Timestamp                    Radon     {:>9}  Humidity  Pressure\n",
             temp_header
         ));
-        output.push_str("───────────────────────────────────────────────────────────────────────\n");
+        output
+            .push_str("───────────────────────────────────────────────────────────────────────\n");
     } else {
         output.push_str(&format!(
             "Timestamp                    CO2    {:>9}  Humidity  Pressure\n",
@@ -559,11 +582,19 @@ pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> S
 
 #[must_use]
 pub fn format_history_csv(history: &[HistoryRecord], opts: &FormatOptions) -> String {
-    let temp_header = if opts.fahrenheit { "temperature_f" } else { "temperature_c" };
+    let temp_header = if opts.fahrenheit {
+        "temperature_f"
+    } else {
+        "temperature_c"
+    };
     let mut output = if opts.no_header {
         String::new()
     } else {
-        format!("timestamp,co2,{},humidity,pressure,{}\n", temp_header, opts.radon_csv_header())
+        format!(
+            "timestamp,co2,{},humidity,pressure,{}\n",
+            temp_header,
+            opts.radon_csv_header()
+        )
     };
     for record in history {
         let ts = record
@@ -571,7 +602,10 @@ pub fn format_history_csv(history: &[HistoryRecord], opts: &FormatOptions) -> St
             .format(&time::format_description::well_known::Rfc3339)
             .unwrap_or_else(|_| String::new());
 
-        let radon_value = record.radon.map(|r| format!("{:.2}", opts.convert_radon(r))).unwrap_or_default();
+        let radon_value = record
+            .radon
+            .map(|r| format!("{:.2}", opts.convert_radon(r)))
+            .unwrap_or_default();
         output.push_str(&format!(
             "{},{},{:.1},{},{:.1},{}\n",
             ts,
@@ -676,7 +710,11 @@ pub fn format_watch_line(reading: &CurrentReading, opts: &FormatOptions) -> Stri
 /// Get the CSV header for watch output.
 #[must_use]
 pub fn format_watch_csv_header(opts: &FormatOptions) -> String {
-    let temp_header = if opts.fahrenheit { "temperature_f" } else { "temperature_c" };
+    let temp_header = if opts.fahrenheit {
+        "temperature_f"
+    } else {
+        "temperature_c"
+    };
     format!(
         "timestamp,co2,{},humidity,pressure,battery,status,{},radiation_usvh\n",
         temp_header,
@@ -692,8 +730,14 @@ pub fn format_watch_csv_line(reading: &CurrentReading, opts: &FormatOptions) -> 
         .format(&time::format_description::well_known::Rfc3339)
         .unwrap_or_else(|_| "???".to_string());
 
-    let radon_value = reading.radon.map(|r| format!("{:.2}", opts.convert_radon(r))).unwrap_or_default();
-    let radiation_rate = reading.radiation_rate.map(|r| format!("{:.3}", r)).unwrap_or_default();
+    let radon_value = reading
+        .radon
+        .map(|r| format!("{:.2}", opts.convert_radon(r)))
+        .unwrap_or_default();
+    let radiation_rate = reading
+        .radiation_rate
+        .map(|r| format!("{:.3}", r))
+        .unwrap_or_default();
 
     format!(
         "{},{},{:.1},{},{:.1},{},{:?},{},{}\n",
@@ -980,4 +1024,3 @@ mod tests {
         assert!((opts.convert_temp(100.0) - 212.0).abs() < 0.01);
     }
 }
-

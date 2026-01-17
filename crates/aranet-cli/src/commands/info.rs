@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 
 use crate::cli::OutputFormat;
-use crate::format::{format_info_csv, format_info_text, FormatOptions};
+use crate::format::{FormatOptions, format_info_csv, format_info_text};
 use crate::util::{connect_device, require_device, write_output};
 
 pub async fn cmd_info(
@@ -41,4 +41,3 @@ pub async fn cmd_info(
     write_output(output, &content)?;
     Ok(())
 }
-

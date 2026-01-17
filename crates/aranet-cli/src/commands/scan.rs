@@ -4,10 +4,10 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use aranet_core::{scan, ScanOptions};
+use aranet_core::{ScanOptions, scan};
 
 use crate::cli::OutputFormat;
-use crate::format::{format_scan_csv, format_scan_json, format_scan_text, FormatOptions};
+use crate::format::{FormatOptions, format_scan_csv, format_scan_json, format_scan_text};
 use crate::util::write_output;
 
 pub async fn cmd_scan(
@@ -39,4 +39,3 @@ pub async fn cmd_scan(
     write_output(output, &content)?;
     Ok(())
 }
-

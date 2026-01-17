@@ -15,7 +15,7 @@ use tracing_subscriber::EnvFilter;
 
 use cli::{Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
 use commands::{cmd_history, cmd_info, cmd_read, cmd_scan, cmd_set, cmd_status, cmd_watch};
-use config::{resolve_device, resolve_timeout, Config};
+use config::{Config, resolve_device, resolve_timeout};
 use format::FormatOptions;
 
 #[tokio::main]
@@ -75,7 +75,10 @@ async fn main() -> Result<()> {
                 .with_compact(compact);
             cmd_scan(timeout, format, output, quiet, &opts).await?;
         }
-        Commands::Read { device, output: out } => {
+        Commands::Read {
+            device,
+            output: out,
+        } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device(device.device, &config);
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
@@ -85,7 +88,10 @@ async fn main() -> Result<()> {
                 .with_bq(out.resolve_bq(config_bq));
             cmd_read(dev, timeout, format, output, quiet, &opts).await?;
         }
-        Commands::Status { device, output: out } => {
+        Commands::Status {
+            device,
+            output: out,
+        } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device(device.device, &config);
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
@@ -317,7 +323,8 @@ mod tests {
     #[test]
     fn test_resolve_format_config_fallback() {
         // When cmd format is default (Text) and no --json flag, use config
-        let result = resolve_format_with_config(false, OutputFormat::Text, Some(OutputFormat::Json));
+        let result =
+            resolve_format_with_config(false, OutputFormat::Text, Some(OutputFormat::Json));
         assert!(matches!(result, OutputFormat::Json));
     }
 

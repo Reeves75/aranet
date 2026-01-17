@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 
 use crate::cli::OutputFormat;
-use crate::format::{format_history_csv, format_history_json, format_history_text, FormatOptions};
+use crate::format::{FormatOptions, format_history_csv, format_history_json, format_history_text};
 use crate::util::{connect_device, require_device, write_output};
 
 pub async fn cmd_history(
@@ -57,4 +57,3 @@ pub async fn cmd_history(
     write_output(output, &content)?;
     Ok(())
 }
-

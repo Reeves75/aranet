@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 
 use crate::cli::OutputFormat;
-use crate::format::{format_reading_csv, format_reading_json, format_reading_text, FormatOptions};
+use crate::format::{FormatOptions, format_reading_csv, format_reading_json, format_reading_text};
 use crate::util::{connect_device, require_device, write_output};
 
 pub async fn cmd_read(
@@ -41,4 +41,3 @@ pub async fn cmd_read(
     write_output(output, &content)?;
     Ok(())
 }
-
