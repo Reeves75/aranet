@@ -3,6 +3,7 @@
 //! Manages friendly device names (aliases) that map to device addresses.
 
 use anyhow::{Result, bail};
+use tabled::{builder::Builder, settings::Style};
 
 use crate::config::Config;
 
@@ -28,13 +29,18 @@ pub fn cmd_alias(action: AliasAction, quiet: bool) -> Result<()> {
                     println!("Add an alias with: aranet alias set <name> <address>");
                 }
             } else {
-                println!("Device Aliases:");
-                println!("────────────────────────────────────");
+                let mut builder = Builder::default();
+                builder.push_record(["Alias", "Device Address"]);
+
                 let mut aliases: Vec<_> = config.aliases.iter().collect();
                 aliases.sort_by_key(|(name, _)| name.as_str());
                 for (name, address) in aliases {
-                    println!("  {} → {}", name, address);
+                    builder.push_record([name.as_str(), address.as_str()]);
                 }
+
+                let mut table = builder.build();
+                table.with(Style::rounded());
+                println!("{}", table);
             }
         }
         AliasAction::Set { name, address } => {

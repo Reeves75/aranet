@@ -8,6 +8,7 @@ use aranet_core::{ScanOptions, scan};
 
 use crate::cli::OutputFormat;
 use crate::format::{FormatOptions, format_scan_csv, format_scan_json, format_scan_text};
+use crate::style;
 use crate::util::write_output;
 
 pub async fn cmd_scan(
@@ -17,9 +18,12 @@ pub async fn cmd_scan(
     quiet: bool,
     opts: &FormatOptions,
 ) -> Result<()> {
-    if !quiet && matches!(format, OutputFormat::Text) {
-        eprintln!("Scanning for Aranet devices (timeout: {}s)...", timeout);
-    }
+    // Show spinner for text output (unless quiet)
+    let spinner = if !quiet && matches!(format, OutputFormat::Text) {
+        Some(style::scanning_spinner(timeout))
+    } else {
+        None
+    };
 
     let options = ScanOptions {
         duration: Duration::from_secs(timeout),
@@ -29,6 +33,11 @@ pub async fn cmd_scan(
     let devices = scan::scan_with_options(options)
         .await
         .context("Failed to scan for devices")?;
+
+    // Clear spinner before output
+    if let Some(sp) = spinner {
+        sp.finish_and_clear();
+    }
 
     let content = match format {
         OutputFormat::Json => format_scan_json(&devices, opts)?,

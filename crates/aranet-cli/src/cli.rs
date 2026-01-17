@@ -13,6 +13,18 @@ pub enum OutputFormat {
     Csv,
 }
 
+/// Visual styling mode for output
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
+pub enum StyleMode {
+    /// Standard styling with colors
+    Minimal,
+    /// Rich styling with tables, icons, and full formatting (default)
+    #[default]
+    Rich,
+    /// Plain text with no decorations (for scripting)
+    Plain,
+}
+
 /// Reusable device connection arguments
 #[derive(Debug, Clone, Args)]
 pub struct DeviceArgs {
@@ -133,6 +145,10 @@ pub struct Cli {
     #[arg(long, global = true, env = "NO_COLOR")]
     pub no_color: bool,
 
+    /// Visual styling mode (minimal, rich, plain)
+    #[arg(long, global = true, value_enum, default_value = "rich", env = "ARANET_STYLE")]
+    pub style: StyleMode,
+
     /// Write output to file instead of stdout
     #[arg(short, long, global = true)]
     pub output: Option<PathBuf>,
@@ -178,6 +194,10 @@ pub enum Commands {
 
         #[command(flatten)]
         output: OutputArgs,
+
+        /// Super-compact single-line output for scripting
+        #[arg(long)]
+        brief: bool,
     },
 
     /// Retrieve historical data from a device
@@ -239,6 +259,10 @@ pub enum Commands {
         /// Number of readings to take before exiting (0 for unlimited)
         #[arg(short = 'n', long, default_value = "0")]
         count: u32,
+
+        /// Watch from BLE advertisements without connecting (requires Smart Home enabled)
+        #[arg(long)]
+        passive: bool,
     },
 
     /// Manage configuration

@@ -172,20 +172,24 @@ aranet info [OPTIONS]
 $ aranet info --device AA:BB:CC:DD:EE:FF
 
 Device Information
-────────────────────────────────────
-Name:         Aranet4 17C3C
-Model:        Aranet4
-Serial:       12345678
-Firmware:     v1.4.19
-Hardware:     v1.0
-Manufacturer: SAF Tehnika
+╭──────────────┬─────────────────╮
+│ Property     │ Value           │
+├──────────────┼─────────────────┤
+│ Name         │ Aranet4 17C3C   │
+│ Model        │ Aranet4         │
+│ Serial       │ 12345678        │
+│ Firmware     │ v1.4.19         │
+│ Hardware     │ v1.0            │
+│ Software     │ v1.0            │
+│ Manufacturer │ SAF Tehnika     │
+╰──────────────┴─────────────────╯
 ```
 
 ---
 
 ## status
 
-Quick one-line reading with colored CO₂ status indicator.
+Quick one-line reading with colored CO2 status indicator.
 
 ```bash
 aranet status [OPTIONS]
@@ -196,13 +200,19 @@ aranet status [OPTIONS]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `-d, --device <ADDRESS>` | auto-detect | Device address (MAC or UUID) |
+| `--brief` | - | Super-compact single-line output |
 
 ### Example
 
 ```bash
 $ aranet status --device AA:BB:CC:DD:EE:FF
 
-Aranet4 17C3C: 847 ppm [GREEN] 22.4°C 45% 1013 hPa
+Aranet4 17C3C: 847 ppm [GREEN] 22.4C 45% 1013 hPa
+
+# Brief mode for scripts
+$ aranet status --device AA:BB:CC:DD:EE:FF --brief
+
+Aranet4 17C3C: 800 ppm [GREEN] | 22.5C | 45% | 85%
 ```
 
 ---
@@ -384,10 +394,12 @@ Added alias 'living-room' -> AA:BB:CC:DD:EE:FF
 
 # List all aliases
 $ aranet alias list
-Device Aliases:
-------------------------------------
-  living-room -> AA:BB:CC:DD:EE:FF
-  bedroom -> 11:22:33:44:55:66
+╭─────────────┬───────────────────╮
+│ Alias       │ Device Address    │
+├─────────────┼───────────────────┤
+│ bedroom     │ 11:22:33:44:55:66 │
+│ living-room │ AA:BB:CC:DD:EE:FF │
+╰─────────────┴───────────────────╯
 
 # Use alias instead of address
 $ aranet read -d living-room

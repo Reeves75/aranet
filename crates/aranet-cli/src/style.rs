@@ -1,0 +1,370 @@
+//! Visual styling utilities for the CLI.
+//!
+//! This module provides consistent styling across all CLI output including:
+//! - Spinners for long-running operations
+//! - Color themes and thresholds
+//! - Table formatting
+//! - Error message boxes
+
+use std::time::Duration;
+
+use console::style;
+use indicatif::{ProgressBar, ProgressStyle};
+use owo_colors::OwoColorize;
+
+// ============================================================================
+// Spinners
+// ============================================================================
+
+/// Create a spinner for scanning operations.
+pub fn scanning_spinner(timeout_secs: u64) -> ProgressBar {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.cyan} {msg}")
+            .expect("valid template")
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+    );
+    pb.set_message(format!("Scanning for Aranet devices... ({}s)", timeout_secs));
+    pb.enable_steady_tick(Duration::from_millis(80));
+    pb
+}
+
+/// Create a spinner for connecting to a device.
+pub fn connecting_spinner(device: &str) -> ProgressBar {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.cyan} {msg}")
+            .expect("valid template")
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+    );
+    pb.set_message(format!("Connecting to {}...", device));
+    pb.enable_steady_tick(Duration::from_millis(80));
+    pb
+}
+
+/// Create a spinner for generic operations.
+pub fn operation_spinner(message: &str) -> ProgressBar {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.cyan} {msg}")
+            .expect("valid template")
+            .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
+    );
+    pb.set_message(message.to_string());
+    pb.enable_steady_tick(Duration::from_millis(80));
+    pb
+}
+
+// ============================================================================
+// Color Thresholds
+// ============================================================================
+
+/// CO2 thresholds (ppm) based on indoor air quality guidelines.
+pub mod co2 {
+    pub const GOOD: u16 = 800;      // Green: < 800 ppm
+    pub const MODERATE: u16 = 1000; // Yellow: 800-1000 ppm
+    pub const POOR: u16 = 1500;     // Orange: 1000-1500 ppm
+    // Red: > 1500 ppm
+}
+
+/// Radon thresholds (Bq/m³) based on EPA guidelines.
+/// EPA action level is 4 pCi/L = ~148 Bq/m³
+pub mod radon {
+    pub const GOOD: u32 = 74;       // Green: < 2 pCi/L (74 Bq/m³)
+    pub const MODERATE: u32 = 148;  // Yellow: 2-4 pCi/L (74-148 Bq/m³)
+    // Red: > 4 pCi/L (148 Bq/m³)
+}
+
+/// Battery thresholds (percentage).
+pub mod battery {
+    pub const LOW: u8 = 20;         // Red: < 20%
+    pub const MEDIUM: u8 = 40;      // Yellow: 20-40%
+    // Green: > 40%
+}
+
+/// Humidity thresholds (percentage) for comfort.
+pub mod humidity {
+    pub const LOW: u8 = 30;         // Yellow: < 30% (too dry)
+    pub const HIGH: u8 = 70;        // Yellow: > 70% (too humid)
+    // Green: 30-70%
+}
+
+/// Temperature thresholds (Celsius) for comfort.
+pub mod temperature {
+    pub const COLD: f32 = 18.0;     // Blue: < 18°C
+    pub const WARM: f32 = 26.0;     // Orange: > 26°C
+    // Green: 18-26°C
+}
+
+// ============================================================================
+// Colored Value Formatting
+// ============================================================================
+
+/// Format CO2 value with appropriate color based on thresholds.
+pub fn format_co2_colored(ppm: u16, no_color: bool) -> String {
+    if no_color {
+        return format!("{}", ppm);
+    }
+
+    if ppm < co2::GOOD {
+        format!("{}", ppm.green())
+    } else if ppm < co2::MODERATE {
+        format!("{}", ppm.yellow())
+    } else if ppm < co2::POOR {
+        format!("{}", style(ppm).color256(208)) // Orange
+    } else {
+        format!("{}", ppm.red())
+    }
+}
+
+/// Format radon value with appropriate color based on EPA thresholds.
+pub fn format_radon_colored(bq: u32, no_color: bool) -> String {
+    if no_color {
+        return format!("{}", bq);
+    }
+
+    if bq < radon::GOOD {
+        format!("{}", bq.green())
+    } else if bq < radon::MODERATE {
+        format!("{}", bq.yellow())
+    } else {
+        format!("{}", bq.red())
+    }
+}
+
+/// Format battery percentage with appropriate color.
+pub fn format_battery_colored(percent: u8, no_color: bool) -> String {
+    if no_color {
+        return format!("{}%", percent);
+    }
+
+    if percent < battery::LOW {
+        format!("{}%", percent.red())
+    } else if percent < battery::MEDIUM {
+        format!("{}%", percent.yellow())
+    } else {
+        format!("{}%", percent.green())
+    }
+}
+
+/// Format humidity percentage with appropriate color.
+pub fn format_humidity_colored(percent: u8, no_color: bool) -> String {
+    if no_color {
+        return format!("{}%", percent);
+    }
+
+    if percent < humidity::LOW || percent > humidity::HIGH {
+        format!("{}%", percent.yellow())
+    } else {
+        format!("{}%", percent.green())
+    }
+}
+
+/// Format temperature with appropriate color.
+pub fn format_temp_colored(celsius: f32, no_color: bool) -> String {
+    if no_color {
+        return format!("{:.1}", celsius);
+    }
+
+    if celsius < temperature::COLD {
+        format!("{:.1}", style(celsius).cyan())
+    } else if celsius > temperature::WARM {
+        format!("{:.1}", style(celsius).color256(208)) // Orange
+    } else {
+        format!("{:.1}", style(celsius).green())
+    }
+}
+
+// ============================================================================
+// Signal Strength Bar
+// ============================================================================
+
+/// Format RSSI as a visual signal bar.
+/// RSSI typically ranges from -100 dBm (weak) to -30 dBm (strong).
+pub fn format_signal_bar(rssi: Option<i16>, no_color: bool) -> String {
+    let rssi = match rssi {
+        Some(r) => r,
+        None => return "N/A".to_string(),
+    };
+
+    // Normalize RSSI to 0-10 scale
+    // -30 dBm = excellent (10), -100 dBm = very weak (0)
+    let strength = ((rssi + 100).max(0).min(70) as f32 / 7.0).round() as usize;
+    let filled = strength.min(10);
+    let empty = 10 - filled;
+
+    let bar = format!("{}{}", "█".repeat(filled), "░".repeat(empty));
+
+    if no_color {
+        format!("{} {:>3}", bar, rssi)
+    } else if filled >= 7 {
+        format!("{} {:>3}", bar.green(), rssi)
+    } else if filled >= 4 {
+        format!("{} {:>3}", bar.yellow(), rssi)
+    } else {
+        format!("{} {:>3}", bar.red(), rssi)
+    }
+}
+
+// ============================================================================
+// Air Quality Summary
+// ============================================================================
+
+/// Get air quality summary text based on CO2 level.
+pub fn air_quality_summary(co2: u16) -> &'static str {
+    if co2 < co2::GOOD {
+        "Excellent"
+    } else if co2 < co2::MODERATE {
+        "Good"
+    } else if co2 < co2::POOR {
+        "Moderate"
+    } else {
+        "Poor"
+    }
+}
+
+/// Get colored air quality summary.
+pub fn air_quality_summary_colored(co2: u16, no_color: bool) -> String {
+    let summary = air_quality_summary(co2);
+    if no_color {
+        return summary.to_string();
+    }
+
+    if co2 < co2::GOOD {
+        format!("{}", summary.green())
+    } else if co2 < co2::MODERATE {
+        format!("{}", summary.green())
+    } else if co2 < co2::POOR {
+        format!("{}", summary.yellow())
+    } else {
+        format!("{}", summary.red())
+    }
+}
+
+/// Get radon risk summary based on EPA guidelines.
+#[allow(dead_code)]
+pub fn radon_risk_summary(bq: u32) -> &'static str {
+    if bq < radon::GOOD {
+        "Low Risk"
+    } else if bq < radon::MODERATE {
+        "Moderate Risk"
+    } else {
+        "High Risk - Action Recommended"
+    }
+}
+
+// ============================================================================
+// Box Drawing / Error Formatting
+// ============================================================================
+
+/// Format an error message in a styled box.
+#[allow(dead_code)]
+pub fn format_error_box(title: &str, message: &str, suggestions: &[&str]) -> String {
+    let width = 60;
+    let border_top = format!("┌─ {} {}", title, "─".repeat(width - title.len() - 4));
+    let border_bottom = format!("└{}┘", "─".repeat(width - 2));
+
+    let mut lines = vec![border_top, "│".to_string()];
+
+    // Wrap message
+    for line in message.lines() {
+        lines.push(format!("│  {}", line));
+    }
+
+    if !suggestions.is_empty() {
+        lines.push("│".to_string());
+        lines.push("│  Troubleshooting:".to_string());
+        for (i, suggestion) in suggestions.iter().enumerate() {
+            lines.push(format!("│    {}. {}", i + 1, suggestion));
+        }
+    }
+
+    lines.push("│".to_string());
+    lines.push(border_bottom);
+
+    lines.join("\n")
+}
+
+/// Format a success message.
+pub fn format_success(message: &str, no_color: bool) -> String {
+    if no_color {
+        format!("[OK] {}", message)
+    } else {
+        format!("{} {}", "[OK]".green(), message)
+    }
+}
+
+/// Format an info message.
+#[allow(dead_code)]
+pub fn format_info(message: &str, no_color: bool) -> String {
+    if no_color {
+        format!("[--] {}", message)
+    } else {
+        format!("{} {}", "[--]".cyan(), message)
+    }
+}
+
+/// Format a warning message.
+#[allow(dead_code)]
+pub fn format_warning(message: &str, no_color: bool) -> String {
+    if no_color {
+        format!("[!!] {}", message)
+    } else {
+        format!("{} {}", "[!!]".yellow(), message)
+    }
+}
+
+// ============================================================================
+// Trend Indicators
+// ============================================================================
+
+/// Get trend indicator comparing current and previous values.
+pub fn trend_indicator(current: f32, previous: f32, no_color: bool) -> &'static str {
+    let diff = current - previous;
+    if diff.abs() < 0.5 {
+        "-"
+    } else if diff > 0.0 {
+        if no_color { "^" } else { "↑" }
+    } else {
+        if no_color { "v" } else { "↓" }
+    }
+}
+
+/// Get trend indicator for integer values.
+pub fn trend_indicator_int(current: i32, previous: i32, no_color: bool) -> &'static str {
+    let diff = current - previous;
+    if diff.abs() < 5 {
+        "-"
+    } else if diff > 0 {
+        if no_color { "^" } else { "↑" }
+    } else {
+        if no_color { "v" } else { "↓" }
+    }
+}
+
+// ============================================================================
+// Section Headers
+// ============================================================================
+
+/// Format a section header with device name.
+pub fn format_device_header(name: &str, no_color: bool) -> String {
+    let line = "─".repeat(40);
+    if no_color {
+        format!("── {} {}", name, line)
+    } else {
+        format!("── {} {}", name.cyan(), line.dimmed())
+    }
+}
+
+/// Format a title header.
+pub fn format_title(title: &str, no_color: bool) -> String {
+    if no_color {
+        format!("{}\n{}", title, "━".repeat(title.len()))
+    } else {
+        format!("{}\n{}", title.bold(), "━".repeat(title.len()).dimmed())
+    }
+}
+

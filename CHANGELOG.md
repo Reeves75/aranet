@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Rich CLI styling** (now the default)
+  - Spinners for long-running operations (scan, connect, history download)
+  - Color-coded sensor values based on thresholds (CO2, radon, battery, humidity, temperature)
+  - Table formatting with `tabled` for history, info, alias, and scan output
+  - Trend indicators in watch mode (up/down/stable arrows)
+  - `--style` flag: `rich` (default), `minimal`, or `plain` for scripting
+  - `--brief` flag for status command (compact one-line output)
+  - Device name headers in read output
+  - Air quality summary labels (Excellent, Good, Fair, Poor)
 - **Pressure unit conversion** (`--inhg` / `--hpa` flags)
   - Display pressure in inches of mercury (inHg) with `--inhg`
   - Explicitly request hPa with `--hpa` (default)
@@ -19,8 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Checks Bluetooth adapter availability and permissions
   - Scans for devices to verify BLE functionality
   - Platform-specific troubleshooting tips (macOS, Linux, Windows)
+  - Numbered progress steps with colored status indicators
 - **`alias` command** for device management
-  - `alias list` - Show all saved device aliases
+  - `alias list` - Show all saved device aliases (now with table formatting)
   - `alias set <name> <address>` - Create a friendly name for a device
   - `alias remove <name>` - Delete an alias
   - Use aliases anywhere a device address is expected
@@ -46,8 +56,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Default style mode changed from `minimal` to `rich`
 - Replaced unmaintained `atty` crate with `std::io::IsTerminal`
 - Refactored `cmd_history` to use `HistoryArgs` struct (clippy compliance)
+
+### Fixed
+
+- macOS device identifier now uses CoreBluetooth UUID instead of placeholder address
 
 ## [0.1.2] - 2026-01-16
 

@@ -159,6 +159,49 @@ aranet read --device <DEVICE> --format json
 aranet read --device <DEVICE> --json    # shorthand
 ```
 
+## Visual Styling
+
+The CLI uses rich styling by default with color-coded values, spinners, and table formatting.
+
+### Style Modes
+
+| Mode | Description |
+|------|-------------|
+| `rich` | Full styling with tables, spinners, colored values (default) |
+| `minimal` | Colors only, no tables or spinners |
+| `plain` | No styling, suitable for scripting |
+
+```bash
+# Use minimal styling
+aranet read --device <DEVICE> --style minimal
+
+# Plain output for scripts
+aranet history --device <DEVICE> --style plain
+
+# Set via environment variable
+export ARANET_STYLE=minimal
+```
+
+### Color-Coded Values
+
+Sensor readings are color-coded based on thresholds:
+
+| Metric | Green | Yellow | Red |
+|--------|-------|--------|-----|
+| CO2 | < 800 ppm | 800-1000 ppm | > 1000 ppm |
+| Radon | < 100 Bq/m3 | 100-150 Bq/m3 | > 150 Bq/m3 |
+| Battery | > 50% | 20-50% | < 20% |
+| Humidity | 30-60% | Outside range | - |
+
+### Brief Mode
+
+Get a compact one-line status:
+
+```bash
+aranet status --device <DEVICE> --brief
+# Output: Aranet4 17C3C: 800 ppm [GREEN] | 22.5C | 45% | 85%
+```
+
 ## Shell Completions
 
 Generate shell completions for your preferred shell:

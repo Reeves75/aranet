@@ -9,12 +9,17 @@ use std::time::Duration;
 
 use anyhow::Result;
 use aranet_core::Device;
+use aranet_core::advertisement::parse_advertisement_with_name;
+use aranet_core::scan::{ScanOptions, scan_with_options};
+use aranet_types::CurrentReading;
+use owo_colors::OwoColorize;
 
 use crate::cli::OutputFormat;
 use crate::format::{
     FormatOptions, format_reading_json, format_watch_csv_header, format_watch_csv_line,
     format_watch_line,
 };
+use crate::style;
 use crate::util::{require_device_interactive, write_output};
 
 /// Minimum backoff delay for reconnection attempts
@@ -22,33 +27,58 @@ const MIN_BACKOFF_SECS: u64 = 2;
 /// Maximum backoff delay for reconnection attempts
 const MAX_BACKOFF_SECS: u64 = 300; // 5 minutes
 
-pub async fn cmd_watch(
-    device: Option<String>,
-    interval: u64,
-    count: u32,
-    timeout: Duration,
-    format: OutputFormat,
-    output: Option<&PathBuf>,
-    opts: &FormatOptions,
-) -> Result<()> {
+/// Arguments for the watch command.
+pub struct WatchArgs<'a> {
+    pub device: Option<String>,
+    pub interval: u64,
+    pub count: u32,
+    pub timeout: Duration,
+    pub format: OutputFormat,
+    pub output: Option<&'a PathBuf>,
+    pub passive: bool,
+    pub opts: &'a FormatOptions,
+}
+
+pub async fn cmd_watch(args: WatchArgs<'_>) -> Result<()> {
+    let WatchArgs {
+        device,
+        interval,
+        count,
+        timeout,
+        format,
+        output,
+        passive,
+        opts,
+    } = args;
+
+    if passive {
+        return cmd_watch_passive(device, interval, count, timeout, format, output, opts).await;
+    }
+
     let identifier = require_device_interactive(device).await?;
 
+    // Print header with device info
+    let header = if opts.no_color {
+        format!("Watching: {}", identifier)
+    } else {
+        format!("Watching: {}", identifier.cyan())
+    };
+    eprintln!("{}", header);
     if count > 0 {
         eprintln!(
-            "Watching {} (interval: {}s, count: {}) - Press Ctrl+C to stop",
-            identifier, interval, count
+            "Interval: {}s | Count: {} | Press Ctrl+C to stop",
+            interval, count
         );
     } else {
-        eprintln!(
-            "Watching {} (interval: {}s) - Press Ctrl+C to stop",
-            identifier, interval
-        );
+        eprintln!("Interval: {}s | Press Ctrl+C to stop", interval);
     }
+    eprintln!("{}", "-".repeat(50));
 
     let mut header_written = opts.no_header;
     let mut current_device: Option<Device> = None;
     let mut readings_taken: u32 = 0;
     let mut backoff_secs = MIN_BACKOFF_SECS;
+    let mut previous_reading: Option<CurrentReading> = None;
 
     loop {
         // Check if we've reached the count limit
@@ -115,9 +145,14 @@ pub async fn cmd_watch(
                         out.push_str(&format_watch_csv_line(&reading, opts));
                         out
                     }
-                    OutputFormat::Text => format_watch_line(&reading, opts),
+                    OutputFormat::Text => format_watch_line_with_trend(
+                        &reading,
+                        previous_reading.as_ref(),
+                        opts,
+                    ),
                 };
                 write_output(output, &content)?;
+                previous_reading = Some(reading);
             }
             Err(e) => {
                 eprintln!("Read failed: {}. Will reconnect on next poll.", e);
@@ -145,5 +180,204 @@ pub async fn cmd_watch(
             }
             _ = tokio::time::sleep(Duration::from_secs(interval)) => {}
         }
+    }
+}
+
+/// Watch sensor data from BLE advertisements without connecting.
+async fn cmd_watch_passive(
+    device: Option<String>,
+    interval: u64,
+    count: u32,
+    timeout: Duration,
+    format: OutputFormat,
+    output: Option<&PathBuf>,
+    opts: &FormatOptions,
+) -> Result<()> {
+    let target = device.as_deref();
+    let mode_desc = if let Some(t) = target {
+        format!("{} (passive)", t)
+    } else {
+        "any device (passive)".to_string()
+    };
+
+    if count > 0 {
+        eprintln!(
+            "Watching {} (interval: {}s, count: {}) - Press Ctrl+C to stop",
+            mode_desc, interval, count
+        );
+    } else {
+        eprintln!(
+            "Watching {} (interval: {}s) - Press Ctrl+C to stop",
+            mode_desc, interval
+        );
+    }
+
+    let mut header_written = opts.no_header;
+    let mut readings_taken: u32 = 0;
+
+    loop {
+        // Check if we've reached the count limit
+        if count > 0 && readings_taken >= count {
+            eprintln!("Completed {} readings.", readings_taken);
+            return Ok(());
+        }
+
+        // Scan for advertisements
+        let options = ScanOptions {
+            duration: timeout,
+            filter_aranet_only: true,
+        };
+
+        match scan_with_options(options).await {
+            Ok(devices) => {
+                // Find the target device or first with advertisement data
+                let found = devices.iter().find(|d| {
+                    if let Some(t) = target {
+                        d.name.as_deref() == Some(t) || d.address == t || d.identifier == t
+                    } else {
+                        d.manufacturer_data.is_some()
+                    }
+                });
+
+                if let Some(discovered) = found {
+                    if let Some(mfr_data) = &discovered.manufacturer_data {
+                        let device_name = discovered.name.as_deref();
+                        match parse_advertisement_with_name(mfr_data, device_name) {
+                            Ok(adv) => {
+                                // Convert to CurrentReading
+                                let mut builder = CurrentReading::builder()
+                                    .co2(adv.co2.unwrap_or(0))
+                                    .temperature(adv.temperature.unwrap_or(0.0))
+                                    .pressure(adv.pressure.unwrap_or(0.0))
+                                    .humidity(adv.humidity.unwrap_or(0))
+                                    .battery(adv.battery)
+                                    .status(adv.status)
+                                    .interval(adv.interval)
+                                    .age(adv.age);
+
+                                if let Some(radon) = adv.radon {
+                                    builder = builder.radon(radon);
+                                }
+                                if let Some(rate) = adv.radiation_dose_rate {
+                                    builder = builder.radiation_rate(rate);
+                                }
+
+                                let reading = builder.build();
+                                readings_taken += 1;
+
+                                let content = match format {
+                                    OutputFormat::Json => format_reading_json(&reading, opts)?,
+                                    OutputFormat::Csv => {
+                                        let mut out = String::new();
+                                        if !header_written {
+                                            out.push_str(&format_watch_csv_header(opts));
+                                            header_written = true;
+                                        }
+                                        out.push_str(&format_watch_csv_line(&reading, opts));
+                                        out
+                                    }
+                                    OutputFormat::Text => format_watch_line(&reading, opts),
+                                };
+                                write_output(output, &content)?;
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to parse advertisement: {}", e);
+                            }
+                        }
+                    } else {
+                        eprintln!(
+                            "Device found but no advertisement data. \
+                             Ensure Smart Home mode is enabled."
+                        );
+                    }
+                } else if let Some(t) = target {
+                    eprintln!("Device '{}' not found. Retrying...", t);
+                } else {
+                    eprintln!("No Aranet devices with advertisement data found. Retrying...");
+                }
+            }
+            Err(e) => {
+                eprintln!("Scan failed: {}. Retrying...", e);
+            }
+        }
+
+        // Check if we've reached the count limit after this reading
+        if count > 0 && readings_taken >= count {
+            continue; // Loop will exit at the top
+        }
+
+        // Wait for next interval with graceful shutdown support
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {
+                eprintln!("\nShutting down...");
+                return Ok(());
+            }
+            _ = tokio::time::sleep(Duration::from_secs(interval)) => {}
+        }
+    }
+}
+
+/// Format a watch line with trend indicators comparing to previous reading.
+fn format_watch_line_with_trend(
+    reading: &CurrentReading,
+    previous: Option<&CurrentReading>,
+    opts: &FormatOptions,
+) -> String {
+    use chrono::Local;
+
+    let timestamp = Local::now().format("%H:%M:%S").to_string();
+
+    // Get trend indicators if we have a previous reading
+    let co2_trend = previous
+        .map(|p| style::trend_indicator_int(reading.co2 as i32, p.co2 as i32, opts.no_color))
+        .unwrap_or("-");
+    let temp_trend = previous
+        .map(|p| style::trend_indicator(reading.temperature, p.temperature, opts.no_color))
+        .unwrap_or("-");
+
+    // Format values with colors
+    let co2_display = if reading.co2 > 0 {
+        format!(
+            "{} ppm {}",
+            style::format_co2_colored(reading.co2, opts.no_color),
+            co2_trend
+        )
+    } else {
+        String::new()
+    };
+
+    let temp_display = format!(
+        "{} {} {}",
+        style::format_temp_colored(opts.convert_temp(reading.temperature), opts.no_color),
+        if opts.fahrenheit { "F" } else { "C" },
+        temp_trend
+    );
+
+    let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
+    let battery_display = style::format_battery_colored(reading.battery, opts.no_color);
+
+    // Build output line
+    if reading.co2 > 0 {
+        // Aranet4
+        format!(
+            "[{}] {} | {} | {} | {}\n",
+            timestamp, co2_display, temp_display, humidity_display, battery_display
+        )
+    } else if let Some(radon) = reading.radon {
+        // AranetRn+
+        let radon_display = style::format_radon_colored(radon, opts.no_color);
+        format!(
+            "[{}] {} Bq/m3 | {} | {} | {}\n",
+            timestamp, radon_display, temp_display, humidity_display, battery_display
+        )
+    } else if let Some(rate) = reading.radiation_rate {
+        // Aranet Radiation
+        format!("[{}] {:.3} uSv/h | {}\n", timestamp, rate, battery_display)
+    } else {
+        // Aranet2
+        format!(
+            "[{}] {} | {} | {}\n",
+            timestamp, temp_display, humidity_display, battery_display
+        )
     }
 }

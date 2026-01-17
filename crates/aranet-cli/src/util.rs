@@ -55,8 +55,8 @@ pub async fn require_device_interactive(device: Option<String>) -> Result<String
     if devices.len() == 1 {
         let dev = &devices[0];
         let name = dev.name.as_deref().unwrap_or("Unknown");
-        eprintln!("Found 1 device: {} ({})", name, dev.address);
-        return Ok(dev.address.clone());
+        eprintln!("Found 1 device: {} ({})", name, dev.identifier);
+        return Ok(dev.identifier.clone());
     }
 
     // Build selection items
@@ -64,7 +64,7 @@ pub async fn require_device_interactive(device: Option<String>) -> Result<String
         .iter()
         .map(|d| {
             let name = d.name.as_deref().unwrap_or("Unknown");
-            format!("{} ({})", name, d.address)
+            format!("{} ({})", name, d.identifier)
         })
         .collect();
 
@@ -75,7 +75,7 @@ pub async fn require_device_interactive(device: Option<String>) -> Result<String
         .interact()
         .context("Failed to get user selection")?;
 
-    Ok(devices[selection].address.clone())
+    Ok(devices[selection].identifier.clone())
 }
 
 /// Connect to a device with timeout and improved error messages.

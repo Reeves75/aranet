@@ -58,11 +58,46 @@ aranet history --device <ADDRESS> --output data.csv
 | `-o, --output <FILE>` | Write output to file instead of stdout |
 | `--json` | Output in JSON format (shorthand for `--format json`) |
 | `--no-color` | Disable colored output |
+| `--style <MODE>` | Visual styling: `rich` (default), `minimal`, `plain` |
 | `--fahrenheit` | Display temperature in Fahrenheit |
 | `--inhg` | Display pressure in inches of mercury |
-| `--bq` | Display radon in Bq/m³ (instead of pCi/L) |
+| `--bq` | Display radon in Bq/m3 (instead of pCi/L) |
 | `-h, --help` | Show help information |
 | `--version` | Show version number |
+
+## Visual Styling
+
+The CLI uses rich styling by default with spinners, color-coded values, and table formatting.
+
+### Style Modes
+
+| Mode | Description |
+|------|-------------|
+| `rich` | Full styling with tables, spinners, colored values (default) |
+| `minimal` | Colors only, no tables or spinners |
+| `plain` | No styling, suitable for scripting |
+
+```bash
+# Use minimal styling
+aranet read --device <ADDRESS> --style minimal
+
+# Plain output for scripts
+aranet history --device <ADDRESS> --style plain
+
+# Set via environment variable
+export ARANET_STYLE=minimal
+```
+
+### Color-Coded Values
+
+Sensor readings are color-coded based on health thresholds:
+
+| Metric | Green | Yellow | Red |
+|--------|-------|--------|-----|
+| CO2 | < 800 ppm | 800-1000 ppm | > 1000 ppm |
+| Radon | < 100 Bq/m3 | 100-150 Bq/m3 | > 150 Bq/m3 |
+| Battery | > 50% | 20-50% | < 20% |
+| Humidity | 30-60% | Outside range | - |
 
 ## Output Formats
 
@@ -103,5 +138,5 @@ aranet history --device <ADDRESS> --format csv
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+Made with love by [Cameron Rye](https://rye.dev/)
 

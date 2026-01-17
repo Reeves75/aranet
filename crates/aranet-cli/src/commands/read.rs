@@ -12,8 +12,9 @@ use futures::future::join_all;
 use crate::cli::OutputFormat;
 use crate::format::{
     FormatOptions, format_multi_reading_csv, format_multi_reading_json, format_multi_reading_text,
-    format_reading_csv, format_reading_json, format_reading_text,
+    format_reading_csv, format_reading_json, format_reading_text, format_reading_text_with_name,
 };
+use crate::style;
 use crate::util::{connect_device, require_device_interactive, write_output};
 
 /// Result of reading from a device
@@ -61,12 +62,21 @@ async fn cmd_read_single(
     quiet: bool,
     opts: &FormatOptions,
 ) -> Result<()> {
-    if !quiet && matches!(format, OutputFormat::Text) {
-        eprintln!("Connecting to {}...", identifier);
-    }
+    // Show spinner while connecting (unless quiet or non-text format)
+    let spinner = if !quiet && matches!(format, OutputFormat::Text) {
+        Some(style::connecting_spinner(identifier))
+    } else {
+        None
+    };
 
     let device = connect_device(identifier, timeout).await?;
 
+    // Clear spinner before reading
+    if let Some(sp) = &spinner {
+        sp.set_message("Reading sensor data...");
+    }
+
+    let device_name = device.name().map(|s| s.to_string());
     let reading = device
         .read_current()
         .await
@@ -74,9 +84,14 @@ async fn cmd_read_single(
 
     device.disconnect().await.ok();
 
+    // Clear spinner before output
+    if let Some(sp) = spinner {
+        sp.finish_and_clear();
+    }
+
     let content = match format {
         OutputFormat::Json => format_reading_json(&reading, opts)?,
-        OutputFormat::Text => format_reading_text(&reading, opts),
+        OutputFormat::Text => format_reading_text_with_name(&reading, opts, device_name.as_deref()),
         OutputFormat::Csv => format_reading_csv(&reading, opts),
     };
 

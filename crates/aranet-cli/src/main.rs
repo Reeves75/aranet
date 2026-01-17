@@ -4,6 +4,7 @@ mod cli;
 mod commands;
 mod config;
 mod format;
+mod style;
 mod util;
 
 use std::io;
@@ -15,8 +16,8 @@ use tracing_subscriber::EnvFilter;
 
 use cli::{AliasSubcommand, Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
 use commands::{
-    AliasAction, HistoryArgs, cmd_alias, cmd_doctor, cmd_history, cmd_info, cmd_read, cmd_scan,
-    cmd_set, cmd_status, cmd_watch,
+    AliasAction, HistoryArgs, WatchArgs, cmd_alias, cmd_doctor, cmd_history, cmd_info, cmd_read,
+    cmd_scan, cmd_set, cmd_status, cmd_watch,
 };
 use config::{Config, resolve_device, resolve_devices, resolve_timeout};
 use format::FormatOptions;
@@ -103,6 +104,7 @@ async fn main() -> Result<()> {
         Commands::Status {
             device,
             output: out,
+            brief,
         } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device(device.device, &config);
@@ -111,8 +113,9 @@ async fn main() -> Result<()> {
                 .with_no_header(out.no_header)
                 .with_compact(compact)
                 .with_bq(out.resolve_bq(config_bq))
-                .with_inhg(out.resolve_inhg(config_inhg));
-            cmd_status(dev, timeout, format, output, &opts).await?;
+                .with_inhg(out.resolve_inhg(config_inhg))
+                .with_style(cli.style.into());
+            cmd_status(dev, timeout, format, output, &opts, brief).await?;
         }
         Commands::History {
             device,
@@ -166,6 +169,7 @@ async fn main() -> Result<()> {
             output: out,
             interval,
             count,
+            passive,
         } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device(device.device, &config);
@@ -175,10 +179,20 @@ async fn main() -> Result<()> {
                 .with_compact(compact)
                 .with_bq(out.resolve_bq(config_bq))
                 .with_inhg(out.resolve_inhg(config_inhg));
-            cmd_watch(dev, interval, count, timeout, format, output, &opts).await?;
+            cmd_watch(WatchArgs {
+                device: dev,
+                interval,
+                count,
+                timeout,
+                format,
+                output,
+                passive,
+                opts: &opts,
+            })
+            .await?;
         }
         Commands::Doctor => {
-            cmd_doctor(cli.verbose).await?;
+            cmd_doctor(cli.verbose, no_color).await?;
         }
         Commands::Config { .. } => unreachable!(),
         Commands::Alias { .. } => unreachable!(),

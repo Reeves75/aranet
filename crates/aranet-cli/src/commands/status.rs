@@ -4,10 +4,12 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
+use owo_colors::OwoColorize;
 use serde::Serialize;
 
 use crate::cli::OutputFormat;
 use crate::format::{FormatOptions, bq_to_pci, csv_escape, format_status};
+use crate::style;
 use crate::util::{connect_device, require_device_interactive, write_output};
 
 pub async fn cmd_status(
@@ -16,10 +18,14 @@ pub async fn cmd_status(
     format: OutputFormat,
     output: Option<&PathBuf>,
     opts: &FormatOptions,
+    brief: bool,
 ) -> Result<()> {
     let identifier = require_device_interactive(device).await?;
 
+    // Show spinner while connecting
+    let spinner = style::connecting_spinner(&identifier);
     let device = connect_device(&identifier, timeout).await?;
+    spinner.finish_and_clear();
 
     let name = device.name().map(|s| s.to_string());
     let reading = device
@@ -34,14 +40,20 @@ pub async fn cmd_status(
     let content = match format {
         OutputFormat::Json => format_status_json(&device_name, &reading, opts)?,
         OutputFormat::Csv => format_status_csv(&device_name, &reading, opts),
-        OutputFormat::Text => format_status_text(&device_name, &reading, opts),
+        OutputFormat::Text => {
+            if brief {
+                format_status_brief(&reading, opts)
+            } else {
+                format_status_text(&device_name, &reading, opts)
+            }
+        }
     };
 
     write_output(output, &content)?;
     Ok(())
 }
 
-/// Format status as one-line text output
+/// Format status as one-line text output with colored values
 fn format_status_text(
     device_name: &str,
     reading: &aranet_types::CurrentReading,
@@ -50,29 +62,62 @@ fn format_status_text(
     let status_str = format_status(reading.status, opts.no_color);
     let temp = opts.format_temp(reading.temperature);
 
+    // Color the device name
+    let name_display = if opts.no_color {
+        device_name.to_string()
+    } else {
+        format!("{}", device_name.cyan())
+    };
+
     if reading.co2 > 0 {
-        // Aranet4
+        // Aranet4 - with colored CO2
+        let co2_display = style::format_co2_colored(reading.co2, opts.no_color);
+        let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
         format!(
-            "{}: {} ppm {} {} {}% {:.1}hPa\n",
-            device_name, reading.co2, status_str, temp, reading.humidity, reading.pressure
+            "{}: {} ppm {} {} {} {:.1}hPa\n",
+            name_display, co2_display, status_str, temp, humidity_display, reading.pressure
         )
     } else if let Some(radon) = reading.radon {
-        // AranetRn+
+        // AranetRn+ - with colored radon
+        let radon_display = style::format_radon_colored(radon, opts.no_color);
+        let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
         format!(
-            "{}: {} {} {} {}% {:.1}hPa\n",
-            device_name,
-            opts.format_radon(radon),
+            "{}: {} Bq/m3 {} {} {} {:.1}hPa\n",
+            name_display,
+            radon_display,
             status_str,
             temp,
-            reading.humidity,
+            humidity_display,
             reading.pressure
         )
     } else if let Some(rate) = reading.radiation_rate {
         // Aranet Radiation
-        format!("{}: {:.3} µSv/h\n", device_name, rate)
+        format!("{}: {:.3} uSv/h\n", name_display, rate)
     } else {
         // Aranet2 or unknown
-        format!("{}: {} {}%\n", device_name, temp, reading.humidity)
+        let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
+        format!("{}: {} {}\n", name_display, temp, humidity_display)
+    }
+}
+
+/// Format status as super-compact brief output (just the key value)
+fn format_status_brief(reading: &aranet_types::CurrentReading, opts: &FormatOptions) -> String {
+    if reading.co2 > 0 {
+        // Aranet4: just CO2 value
+        format!("{}\n", reading.co2)
+    } else if let Some(radon) = reading.radon {
+        // AranetRn+: just radon value
+        if opts.bq {
+            format!("{}\n", radon)
+        } else {
+            format!("{:.2}\n", radon as f32 / 37.0)
+        }
+    } else if let Some(rate) = reading.radiation_rate {
+        // Aranet Radiation: just rate
+        format!("{:.3}\n", rate)
+    } else {
+        // Aranet2: temp and humidity
+        format!("{:.1},{}\n", reading.temperature, reading.humidity)
     }
 }
 

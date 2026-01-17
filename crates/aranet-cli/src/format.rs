@@ -6,6 +6,9 @@ use aranet_types::{CurrentReading, DeviceInfo, HistoryRecord, Status};
 use owo_colors::OwoColorize;
 use serde::Serialize;
 
+use crate::cli::StyleMode;
+use crate::style;
+
 /// Formatting options for output.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FormatOptions {
@@ -21,6 +24,8 @@ pub struct FormatOptions {
     pub bq: bool,
     /// Use inHg for pressure instead of hPa.
     pub inhg: bool,
+    /// Visual styling mode.
+    pub style: StyleMode,
 }
 
 impl FormatOptions {
@@ -32,7 +37,25 @@ impl FormatOptions {
             compact: false,
             bq: false,
             inhg: false,
+            style: StyleMode::Minimal,
         }
+    }
+
+    /// Create with style mode.
+    pub fn with_style(mut self, style: StyleMode) -> Self {
+        self.style = style;
+        self
+    }
+
+    /// Check if rich styling is enabled.
+    pub fn is_rich(&self) -> bool {
+        self.style == StyleMode::Rich
+    }
+
+    /// Check if plain styling is enabled (no decorations).
+    #[allow(dead_code)]
+    pub fn is_plain(&self) -> bool {
+        self.style == StyleMode::Plain
     }
 
     /// Create with no_header option for CSV output.
@@ -240,13 +263,15 @@ pub fn format_scan_text(devices: &[DiscoveredDevice], opts: &FormatOptions) -> S
         return "No Aranet devices found.\n".to_string();
     }
 
+    // Use rich table formatting if enabled
+    if opts.is_rich() {
+        return format_scan_text_rich(devices, opts);
+    }
+
     let mut output = format!("Found {} device(s):\n\n", devices.len());
     for device in devices {
         let name = device.name.as_deref().unwrap_or("Unknown");
-        let rssi = device
-            .rssi
-            .map(|r| format!("{} dBm", r))
-            .unwrap_or_else(|| "N/A".to_string());
+        let signal = style::format_signal_bar(device.rssi, opts.no_color);
         let dtype = device
             .device_type
             .map(|t| format!("{:?}", t))
@@ -259,12 +284,70 @@ pub fn format_scan_text(devices: &[DiscoveredDevice], opts: &FormatOptions) -> S
             format!("{}", name.cyan())
         };
 
+        // Truncate identifier for display
+        let id_display = if device.identifier.len() > 18 {
+            format!("{}...", &device.identifier[..15])
+        } else {
+            device.identifier.clone()
+        };
+
         output.push_str(&format!(
-            "  {:<20} {:<20} RSSI: {:<10} Type: {}\n",
-            name_display, device.identifier, rssi, dtype
+            "  {:<20} {:<18} {}  {}\n",
+            name_display, id_display, signal, dtype
         ));
     }
     output
+}
+
+/// Rich table formatting for scan results
+fn format_scan_text_rich(devices: &[DiscoveredDevice], opts: &FormatOptions) -> String {
+    use tabled::{Table, Tabled, settings::{Style, object::Columns, Modify, Width}};
+
+    #[derive(Tabled)]
+    struct DeviceRow {
+        #[tabled(rename = "Name")]
+        name: String,
+        #[tabled(rename = "Type")]
+        device_type: String,
+        #[tabled(rename = "Signal")]
+        signal: String,
+        #[tabled(rename = "Identifier")]
+        identifier: String,
+    }
+
+    let rows: Vec<DeviceRow> = devices
+        .iter()
+        .map(|d| {
+            let name = d.name.as_deref().unwrap_or("Unknown");
+            DeviceRow {
+                name: if opts.no_color {
+                    name.to_string()
+                } else {
+                    format!("{}", name.cyan())
+                },
+                device_type: d
+                    .device_type
+                    .map(|t| format!("{:?}", t))
+                    .unwrap_or_else(|| "Unknown".to_string()),
+                signal: style::format_signal_bar(d.rssi, opts.no_color),
+                identifier: if d.identifier.len() > 20 {
+                    format!("{}...", &d.identifier[..17])
+                } else {
+                    d.identifier.clone()
+                },
+            }
+        })
+        .collect();
+
+    let mut table = Table::new(rows);
+    table.with(Style::rounded());
+    table.with(Modify::new(Columns::new(0..1)).with(Width::truncate(20)));
+
+    format!(
+        "Found {} Aranet device(s)\n\n{}\n",
+        devices.len(),
+        table
+    )
 }
 
 #[must_use]
@@ -296,22 +379,65 @@ pub fn format_scan_csv(devices: &[DiscoveredDevice], opts: &FormatOptions) -> St
 
 #[must_use]
 pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> String {
+    format_reading_text_with_name(reading, opts, None)
+}
+
+/// Format reading with optional device name header.
+#[must_use]
+pub fn format_reading_text_with_name(
+    reading: &CurrentReading,
+    opts: &FormatOptions,
+    device_name: Option<&str>,
+) -> String {
     let mut output = String::new();
 
-    // CO2 (Aranet4)
+    // Add device header if name is provided and rich mode is enabled
+    if let Some(name) = device_name {
+        if opts.is_rich() {
+            output.push_str(&style::format_device_header(name, opts.no_color));
+            output.push('\n');
+
+            // Add air quality summary for CO2 devices
+            if reading.co2 > 0 {
+                let summary = style::air_quality_summary_colored(reading.co2, opts.no_color);
+                output.push_str(&format!("Air Quality: {}\n", summary));
+            }
+            output.push('\n');
+        }
+    }
+
+    // CO2 (Aranet4) - with colored value
     if reading.co2 > 0 {
+        let co2_display = style::format_co2_colored(reading.co2, opts.no_color);
         output.push_str(&format!(
-            "CO₂:         {:>5} ppm   {}\n",
-            reading.co2,
+            "CO2:         {:>5} ppm   {}\n",
+            co2_display,
             format_status(reading.status, opts.no_color)
         ));
     }
 
-    // Radon (AranetRn+)
+    // Radon (AranetRn+) - with colored value
     if let Some(radon) = reading.radon {
+        let radon_display = if opts.bq {
+            style::format_radon_colored(radon, opts.no_color)
+        } else {
+            // Convert to pCi/L for display
+            let pci = radon as f32 / 37.0;
+            if opts.no_color {
+                format!("{:.2}", pci)
+            } else if radon < style::radon::GOOD {
+                format!("{}", format!("{:.2}", pci).green())
+            } else if radon < style::radon::MODERATE {
+                format!("{}", format!("{:.2}", pci).yellow())
+            } else {
+                format!("{}", format!("{:.2}", pci).red())
+            }
+        };
+        let unit = if opts.bq { "Bq/m3" } else { "pCi/L" };
         output.push_str(&format!(
-            "Radon:       {:>10}  {}\n",
-            opts.format_radon(radon),
+            "Radon:       {:>6} {}  {}\n",
+            radon_display,
+            unit,
             format_status(reading.status, opts.no_color)
         ));
     }
@@ -335,21 +461,26 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
 
     // Radiation (Aranet Radiation)
     if let Some(rate) = reading.radiation_rate {
-        output.push_str(&format!("Radiation:   {:>5.3} µSv/h\n", rate));
+        output.push_str(&format!("Radiation:   {:>5.3} uSv/h\n", rate));
     }
     if let Some(total) = reading.radiation_total {
         output.push_str(&format!("Total Dose:  {:>5.3} mSv\n", total));
     }
 
-    // Common fields
+    // Common fields - with colored values
     if reading.temperature != 0.0 {
-        output.push_str(&format!(
-            "Temperature: {:>8}\n",
-            opts.format_temp(reading.temperature)
-        ));
+        let unit = if opts.fahrenheit { "F" } else { "C" };
+        let temp_value = opts.convert_temp(reading.temperature);
+        let temp_display = if opts.no_color {
+            format!("{:.1}", temp_value)
+        } else {
+            style::format_temp_colored(temp_value, opts.no_color)
+        };
+        output.push_str(&format!("Temperature: {:>6} {}\n", temp_display, unit));
     }
     if reading.humidity > 0 {
-        output.push_str(&format!("Humidity:    {:>5}%\n", reading.humidity));
+        let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
+        output.push_str(&format!("Humidity:    {:>6}\n", humidity_display));
     }
     if reading.pressure != 0.0 {
         output.push_str(&format!(
@@ -357,7 +488,10 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
             opts.format_pressure(reading.pressure)
         ));
     }
-    output.push_str(&format!("Battery:     {:>5}%\n", reading.battery));
+
+    // Battery with colored value
+    let battery_display = style::format_battery_colored(reading.battery, opts.no_color);
+    output.push_str(&format!("Battery:     {:>6}\n", battery_display));
     output.push_str(&format!("Last Update: {}\n", format_age(reading.age)));
     output.push_str(&format!("Interval:    {} minutes\n", reading.interval / 60));
 
@@ -627,53 +761,28 @@ pub fn format_multi_reading_csv(readings: &[DeviceReading], opts: &FormatOptions
 
 #[must_use]
 pub fn format_info_text(info: &DeviceInfo, opts: &FormatOptions) -> String {
-    if opts.no_color {
-        format!(
-            "Device Information\n\
-             ────────────────────────────────────\n\
-             Name:         {}\n\
-             Model:        {}\n\
-             Serial:       {}\n\
-             Firmware:     {}\n\
-             Hardware:     {}\n\
-             Software:     {}\n\
-             Manufacturer: {}\n",
-            info.name,
-            info.model,
-            info.serial,
-            info.firmware,
-            info.hardware,
-            info.software,
-            info.manufacturer
-        )
+    use tabled::{builder::Builder, settings::Style};
+
+    let mut builder = Builder::default();
+    builder.push_record(["Property", "Value"]);
+    builder.push_record(["Name", &info.name]);
+    builder.push_record(["Model", &info.model]);
+    builder.push_record(["Serial", &info.serial]);
+    builder.push_record(["Firmware", &info.firmware]);
+    builder.push_record(["Hardware", &info.hardware]);
+    builder.push_record(["Software", &info.software]);
+    builder.push_record(["Manufacturer", &info.manufacturer]);
+
+    let mut table = builder.build();
+    table.with(Style::rounded());
+
+    let title = if opts.no_color {
+        "Device Information".to_string()
     } else {
-        format!(
-            "{}\n\
-             ────────────────────────────────────\n\
-             {:<14}{}\n\
-             {:<14}{}\n\
-             {:<14}{}\n\
-             {:<14}{}\n\
-             {:<14}{}\n\
-             {:<14}{}\n\
-             {:<14}{}\n",
-            "Device Information".bold(),
-            "Name:".dimmed(),
-            info.name.cyan(),
-            "Model:".dimmed(),
-            info.model,
-            "Serial:".dimmed(),
-            info.serial,
-            "Firmware:".dimmed(),
-            info.firmware,
-            "Hardware:".dimmed(),
-            info.hardware,
-            "Software:".dimmed(),
-            info.software,
-            "Manufacturer:".dimmed(),
-            info.manufacturer
-        )
-    }
+        format!("{}", "Device Information".bold())
+    };
+
+    format!("{}\n{}\n", title, table)
 }
 
 #[must_use]
@@ -710,6 +819,8 @@ pub fn format_info_csv(info: &DeviceInfo, opts: &FormatOptions) -> String {
 
 #[must_use]
 pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> String {
+    use tabled::{builder::Builder, settings::Style};
+
     if history.is_empty() {
         return "No history records found.\n".to_string();
     }
@@ -717,54 +828,46 @@ pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> S
     // Detect device type from first record
     let is_radon = history.first().is_some_and(|r| r.radon.is_some());
 
-    let temp_header = if opts.fahrenheit {
-        "Temp (°F)"
-    } else {
-        "Temp (°C)"
-    };
+    let temp_header = if opts.fahrenheit { "Temp (°F)" } else { "Temp (°C)" };
+
     let mut output = format!("History ({} records):\n\n", history.len());
 
+    // Build table with dynamic headers
+    let mut builder = Builder::default();
+
+    // Add header row
     if is_radon {
-        output.push_str(&format!(
-            "Timestamp                    Radon     {:>9}  Humidity  Pressure\n",
-            temp_header
-        ));
-        output
-            .push_str("───────────────────────────────────────────────────────────────────────\n");
+        builder.push_record(["Timestamp", "Radon", temp_header, "Humidity", "Pressure"]);
     } else {
-        output.push_str(&format!(
-            "Timestamp                    CO2    {:>9}  Humidity  Pressure\n",
-            temp_header
-        ));
-        output.push_str("─────────────────────────────────────────────────────────────────\n");
+        builder.push_record(["Timestamp", "CO2", temp_header, "Humidity", "Pressure"]);
     }
 
+    // Add data rows (limit to 20)
     for record in history.iter().take(20) {
         let ts = record
             .timestamp
             .format(&time::format_description::well_known::Rfc3339)
             .unwrap_or_else(|_| "Unknown".to_string());
 
-        if let Some(radon) = record.radon {
-            output.push_str(&format!(
-                "{}  {:>10}  {:>9}  {:>5}%    {:>10}\n",
-                ts,
-                opts.format_radon(radon),
-                opts.format_temp(record.temperature),
-                record.humidity,
-                opts.format_pressure(record.pressure)
-            ));
+        let value = if let Some(radon) = record.radon {
+            opts.format_radon(radon)
         } else {
-            output.push_str(&format!(
-                "{}  {:>5} ppm  {:>9}  {:>5}%    {:>10}\n",
-                ts,
-                record.co2,
-                opts.format_temp(record.temperature),
-                record.humidity,
-                opts.format_pressure(record.pressure)
-            ));
-        }
+            format!("{} ppm", record.co2)
+        };
+
+        builder.push_record([
+            ts,
+            value,
+            opts.format_temp(record.temperature),
+            format!("{}%", record.humidity),
+            opts.format_pressure(record.pressure),
+        ]);
     }
+
+    let mut table = builder.build();
+    table.with(Style::rounded());
+    output.push_str(&table.to_string());
+    output.push('\n');
 
     if history.len() > 20 {
         output.push_str(&format!("... and {} more records\n", history.len() - 20));
@@ -1074,7 +1177,8 @@ mod tests {
         let result = format_scan_text(&devices, &opts);
         assert!(result.contains("Found 1 device(s)"));
         assert!(result.contains("Aranet4 12345"));
-        assert!(result.contains("-50 dBm"));
+        // Signal bar now shows visual bar with RSSI value
+        assert!(result.contains("-50"));
         assert!(result.contains("Aranet4"));
     }
 
@@ -1147,11 +1251,12 @@ mod tests {
         let reading = make_aranet4_reading();
         let opts = FormatOptions::new(true, false);
         let result = format_reading_text(&reading, &opts);
-        assert!(result.contains("CO₂:"));
-        assert!(result.contains("800 ppm"));
+        assert!(result.contains("CO2:"));
+        assert!(result.contains("800"));
+        assert!(result.contains("ppm"));
         assert!(result.contains("[GREEN]"));
         assert!(result.contains("Temperature:"));
-        assert!(result.contains("22.5°C"));
+        assert!(result.contains("22.5"));
     }
 
     #[test]
