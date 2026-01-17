@@ -825,6 +825,27 @@ mod tests {
     // format_scan_* tests
     // ========================================================================
 
+    /// Create a test PeripheralId for macOS (uses UUID)
+    #[cfg(target_os = "macos")]
+    fn make_test_peripheral_id() -> btleplug::platform::PeripheralId {
+        btleplug::platform::PeripheralId::from(uuid::Uuid::nil())
+    }
+
+    /// Create a test PeripheralId for Linux (uses bluez DeviceId)
+    #[cfg(target_os = "linux")]
+    fn make_test_peripheral_id() -> btleplug::platform::PeripheralId {
+        use bluez_async::{AdapterId, DeviceId, MacAddress};
+        let adapter_id = AdapterId::new("/org/bluez/hci0");
+        let mac = MacAddress::new([0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
+        btleplug::platform::PeripheralId::from(DeviceId::new(adapter_id, mac))
+    }
+
+    /// Create a test PeripheralId for Windows (uses u64 address)
+    #[cfg(target_os = "windows")]
+    fn make_test_peripheral_id() -> btleplug::platform::PeripheralId {
+        btleplug::platform::PeripheralId(0xAABBCCDDEEFF)
+    }
+
     fn make_test_device(
         name: Option<&str>,
         address: &str,
@@ -833,7 +854,7 @@ mod tests {
     ) -> DiscoveredDevice {
         DiscoveredDevice {
             name: name.map(|s| s.to_string()),
-            id: btleplug::platform::PeripheralId::from(uuid::Uuid::nil()),
+            id: make_test_peripheral_id(),
             address: address.to_string(),
             identifier: address.to_string(),
             rssi,
