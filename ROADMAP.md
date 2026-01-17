@@ -9,7 +9,7 @@ designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aran
 
 ---
 
-## Current Progress (Updated Jan 16, 2026)
+## Current Progress (Updated Jan 17, 2026)
 
 | Phase | Component | Status | Progress |
 |-------|-----------|--------|----------|
@@ -35,15 +35,23 @@ designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aran
 
 ### Recent Improvements (Jan 2026)
 
-- **CLI Phase 2 complete**: All core commands fully implemented
+- **CLI Phase 2 complete**: All commands fully implemented
 - `set` command for device settings (interval, range, smart_home)
 - `watch` command for continuous monitoring with auto-reconnect
 - `config` command for managing `~/.config/aranet/config.toml`
-- Config file support with device, format, no_color, fahrenheit options
+- Config file support with device, format, no_color, fahrenheit, inhg options
 - Added `--json` global flag, `ARANET_DEVICE` env var, `--no-color` flag
 - Added `status` command for quick one-line output
 - Colored CO₂ status indicators (green/amber/red)
 - JSON and CSV output for all commands
+- `doctor` command for BLE diagnostics and troubleshooting
+- `alias` command for friendly device names
+- `--passive` read mode from BLE advertisements
+- Multi-device read with parallel connections
+- Interactive device picker when no device specified
+- History `--since`/`--until` date filters
+- Progress bars for history download
+- `--inhg`/`--hpa` pressure unit options
 - All workspace tests passing
 
 ### Next Priority
@@ -51,8 +59,6 @@ designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aran
 1. Add sensor data display to TUI shell
 2. Add sensor data display to GUI shell
 3. Implement Web Bluetooth in WASM module
-4. Add `doctor` command for BLE diagnostics
-5. Add `--fahrenheit` / `--inhg` unit conversion
 
 ## Vision
 
@@ -178,8 +184,8 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 | `watch` - Continuous monitoring | P1 | [x] Implemented |
 | `config` - Manage configuration | P1 | [x] Implemented |
 | `completions` - Shell completions | P1 | [x] Implemented |
-| `doctor` - Diagnose BLE/permission issues | P2 | [ ] |
-| `alias` - Save friendly device names | P2 | [ ] |
+| `doctor` - Diagnose BLE/permission issues | P2 | [x] Implemented |
+| `alias` - Save friendly device names | P2 | [x] Implemented |
 
 #### Global Flags & Configuration
 
@@ -189,24 +195,24 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 | `--output` flag (file output) | P1 | [x] Implemented |
 | `--json` global flag | P0 | [x] Implemented |
 | `--no-color` flag (+ `NO_COLOR` env) | P1 | [x] Implemented |
-| `--fahrenheit` / `--celsius` units | P1 | [ ] |
-| `--inhg` pressure unit (inches Hg) | P2 | [ ] |
+| `--fahrenheit` / `--celsius` units | P1 | [x] Implemented |
+| `--inhg` pressure unit (inches Hg) | P2 | [x] Implemented |
 | `ARANET_DEVICE` env var | P0 | [x] Implemented |
 | Config file (`~/.config/aranet/config.toml`) | P1 | [x] Implemented |
-| Interactive device picker (when no device specified) | P1 | [ ] |
+| Interactive device picker (when no device specified) | P1 | [x] Implemented |
 
 #### Read Command Options
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| `--passive` (read from advertisements only) | P1 | [ ] |
+| `--passive` (read from advertisements only) | P1 | [x] Implemented |
 | `--format` (text, json, csv) | P1 | [x] Implemented |
 
 #### History Command Options
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| `--since` / `--until` date filters | P1 | [ ] |
+| `--since` / `--until` date filters | P1 | [x] Implemented |
 | `--format` (text, json, csv) | P1 | [x] Implemented |
 | `--count` limit records | P1 | [~] Defined, not wired |
 
@@ -217,14 +223,14 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 | JSON output | P0 | [x] Implemented |
 | CSV export | P0 | [x] Implemented |
 | Colored output with CO₂ status indicators | P2 | [x] Implemented |
-| Progress bars for history download | P2 | [ ] |
+| Progress bars for history download | P2 | [x] Implemented |
 
 #### Multi-Device Support
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Read from multiple devices | P1 | [ ] |
-| Device aliases (friendly names) | P2 | [ ] |
+| Read from multiple devices | P1 | [x] Implemented |
+| Device aliases (friendly names) | P2 | [x] Implemented |
 
 ### Future CLI Enhancements (Post-v0.2.0)
 

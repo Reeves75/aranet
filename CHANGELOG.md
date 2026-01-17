@@ -7,7 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes._
+## [0.1.3] - 2026-01-17
+
+### Added
+
+- **Pressure unit conversion** (`--inhg` / `--hpa` flags)
+  - Display pressure in inches of mercury (inHg) with `--inhg`
+  - Explicitly request hPa with `--hpa` (default)
+  - Configurable via config file (`inhg = true`)
+- **`doctor` command** for BLE diagnostics
+  - Checks Bluetooth adapter availability and permissions
+  - Scans for devices to verify BLE functionality
+  - Platform-specific troubleshooting tips (macOS, Linux, Windows)
+- **`alias` command** for device management
+  - `alias list` - Show all saved device aliases
+  - `alias set <name> <address>` - Create a friendly name for a device
+  - `alias remove <name>` - Delete an alias
+  - Use aliases anywhere a device address is expected
+- **Passive read mode** (`--passive` flag on `read`)
+  - Read sensor data from BLE advertisements without connecting
+  - Requires Smart Home integration enabled on the device
+  - Faster readings when device data is advertised
+- **Multi-device read support**
+  - Specify multiple devices: `aranet read -d device1 -d device2`
+  - Comma-separated: `aranet read -d device1,device2`
+  - Parallel reading from all devices
+  - Combined output in text, JSON, and CSV formats
+- **Interactive device picker**
+  - When no device is specified, scan and present a selection menu
+  - Works for `read`, `history`, `info`, `status`, `watch` commands
+- **History date filters** (`--since` / `--until`)
+  - Filter history by date range
+  - Supports RFC3339 format (e.g., `2026-01-15T10:30:00Z`)
+  - Supports date-only format (e.g., `2026-01-15`)
+- **Progress bars for history download**
+  - Visual progress indicator with percentage and current parameter
+  - Shows download progress across all history parameters
+
+### Changed
+
+- Replaced unmaintained `atty` crate with `std::io::IsTerminal`
+- Refactored `cmd_history` to use `HistoryArgs` struct (clippy compliance)
 
 ## [0.1.2] - 2026-01-16
 

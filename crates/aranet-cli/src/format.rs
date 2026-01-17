@@ -19,6 +19,8 @@ pub struct FormatOptions {
     pub compact: bool,
     /// Use Bq/m³ for radon (SI units) instead of pCi/L.
     pub bq: bool,
+    /// Use inHg for pressure instead of hPa.
+    pub inhg: bool,
 }
 
 impl FormatOptions {
@@ -29,6 +31,7 @@ impl FormatOptions {
             no_header: false,
             compact: false,
             bq: false,
+            inhg: false,
         }
     }
 
@@ -47,6 +50,12 @@ impl FormatOptions {
     /// Create with Bq/m³ radon unit option.
     pub fn with_bq(mut self, bq: bool) -> Self {
         self.bq = bq;
+        self
+    }
+
+    /// Create with inHg pressure unit option.
+    pub fn with_inhg(mut self, inhg: bool) -> Self {
+        self.inhg = inhg;
         self
     }
 
@@ -102,12 +111,44 @@ impl FormatOptions {
     pub fn convert_radon(&self, bq: u32) -> f32 {
         if self.bq { bq as f32 } else { bq_to_pci(bq) }
     }
+
+    /// Format pressure with appropriate unit.
+    #[must_use]
+    pub fn format_pressure(&self, hpa: f32) -> String {
+        if self.inhg {
+            format!("{:.2} inHg", hpa_to_inhg(hpa))
+        } else {
+            format!("{:.1} hPa", hpa)
+        }
+    }
+
+    /// Get pressure CSV header name.
+    #[must_use]
+    pub fn pressure_csv_header(&self) -> &'static str {
+        if self.inhg {
+            "pressure_inhg"
+        } else {
+            "pressure_hpa"
+        }
+    }
+
+    /// Convert pressure value for CSV/JSON output.
+    #[must_use]
+    pub fn convert_pressure(&self, hpa: f32) -> f32 {
+        if self.inhg { hpa_to_inhg(hpa) } else { hpa }
+    }
 }
 
 /// Convert Bq/m³ to pCi/L (1 Bq/m³ = 0.027 pCi/L)
 #[must_use]
 pub fn bq_to_pci(bq: u32) -> f32 {
     bq as f32 * 0.027
+}
+
+/// Convert hPa to inHg (1 hPa = 0.02953 inHg)
+#[must_use]
+pub fn hpa_to_inhg(hpa: f32) -> f32 {
+    hpa * 0.02953
 }
 
 /// Escape a string for CSV output.
@@ -311,7 +352,10 @@ pub fn format_reading_text(reading: &CurrentReading, opts: &FormatOptions) -> St
         output.push_str(&format!("Humidity:    {:>5}%\n", reading.humidity));
     }
     if reading.pressure != 0.0 {
-        output.push_str(&format!("Pressure:    {:>5.1} hPa\n", reading.pressure));
+        output.push_str(&format!(
+            "Pressure:    {:>10}\n",
+            opts.format_pressure(reading.pressure)
+        ));
     }
     output.push_str(&format!("Battery:     {:>5}%\n", reading.battery));
     output.push_str(&format!("Last Update: {}\n", format_age(reading.age)));
@@ -342,11 +386,11 @@ pub fn format_reading_csv(reading: &CurrentReading, opts: &FormatOptions) -> Str
 
     if opts.no_header {
         format!(
-            "{},{:.1},{},{:.1},{},{:?},{},{},{},{},{}\n",
+            "{},{:.1},{},{:.2},{},{:?},{},{},{},{},{}\n",
             reading.co2,
             opts.convert_temp(reading.temperature),
             reading.humidity,
-            reading.pressure,
+            opts.convert_pressure(reading.pressure),
             reading.battery,
             reading.status,
             reading.age,
@@ -357,14 +401,15 @@ pub fn format_reading_csv(reading: &CurrentReading, opts: &FormatOptions) -> Str
         )
     } else {
         format!(
-            "co2,{},humidity,pressure,battery,status,age,interval,{},radiation_usvh,radiation_msv\n\
-             {},{:.1},{},{:.1},{},{:?},{},{},{},{},{}\n",
+            "co2,{},humidity,{},battery,status,age,interval,{},radiation_usvh,radiation_msv\n\
+             {},{:.1},{},{:.2},{},{:?},{},{},{},{},{}\n",
             temp_header,
+            opts.pressure_csv_header(),
             opts.radon_csv_header(),
             reading.co2,
             opts.convert_temp(reading.temperature),
             reading.humidity,
-            reading.pressure,
+            opts.convert_pressure(reading.pressure),
             reading.battery,
             reading.status,
             reading.age,
@@ -376,7 +421,7 @@ pub fn format_reading_csv(reading: &CurrentReading, opts: &FormatOptions) -> Str
     }
 }
 
-/// Format reading as JSON with temperature unit conversion applied.
+/// Format reading as JSON with temperature and pressure unit conversion applied.
 pub fn format_reading_json(reading: &CurrentReading, opts: &FormatOptions) -> Result<String> {
     #[derive(Serialize)]
     struct ReadingJson {
@@ -385,6 +430,7 @@ pub fn format_reading_json(reading: &CurrentReading, opts: &FormatOptions) -> Re
         temperature_unit: &'static str,
         humidity: u8,
         pressure: f32,
+        pressure_unit: &'static str,
         battery: u8,
         status: String,
         age: u16,
@@ -410,7 +456,8 @@ pub fn format_reading_json(reading: &CurrentReading, opts: &FormatOptions) -> Re
         temperature: opts.convert_temp(reading.temperature),
         temperature_unit: if opts.fahrenheit { "F" } else { "C" },
         humidity: reading.humidity,
-        pressure: reading.pressure,
+        pressure: opts.convert_pressure(reading.pressure),
+        pressure_unit: if opts.inhg { "inHg" } else { "hPa" },
         battery: reading.battery,
         status: format!("{:?}", reading.status),
         age: reading.age,
@@ -425,6 +472,153 @@ pub fn format_reading_json(reading: &CurrentReading, opts: &FormatOptions) -> Re
     };
 
     opts.as_json(&json)
+}
+
+// ============================================================================
+// Multi-device reading formatting
+// ============================================================================
+
+use crate::commands::DeviceReading;
+
+/// Format multiple device readings as text
+#[must_use]
+pub fn format_multi_reading_text(readings: &[DeviceReading], opts: &FormatOptions) -> String {
+    let mut output = String::new();
+
+    for (i, dr) in readings.iter().enumerate() {
+        if i > 0 {
+            output.push('\n');
+        }
+
+        // Device header
+        if opts.no_color {
+            output.push_str(&format!("── {} ──\n", dr.identifier));
+        } else {
+            output.push_str(&format!("── {} ──\n", dr.identifier.cyan()));
+        }
+
+        output.push_str(&format_reading_text(&dr.reading, opts));
+    }
+
+    output
+}
+
+/// Format multiple device readings as JSON
+pub fn format_multi_reading_json(
+    readings: &[DeviceReading],
+    opts: &FormatOptions,
+) -> Result<String> {
+    #[derive(Serialize)]
+    struct MultiReadingJson {
+        count: usize,
+        readings: Vec<DeviceReadingJson>,
+    }
+
+    #[derive(Serialize)]
+    struct DeviceReadingJson {
+        device: String,
+        co2: u16,
+        temperature: f32,
+        temperature_unit: &'static str,
+        humidity: u8,
+        pressure: f32,
+        pressure_unit: &'static str,
+        battery: u8,
+        status: String,
+        age: u16,
+        interval: u16,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        radon_bq: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        radon_pci: Option<f32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        radiation_rate: Option<f32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        radiation_total: Option<f64>,
+    }
+
+    let json = MultiReadingJson {
+        count: readings.len(),
+        readings: readings
+            .iter()
+            .map(|dr| DeviceReadingJson {
+                device: dr.identifier.clone(),
+                co2: dr.reading.co2,
+                temperature: opts.convert_temp(dr.reading.temperature),
+                temperature_unit: if opts.fahrenheit { "F" } else { "C" },
+                humidity: dr.reading.humidity,
+                pressure: opts.convert_pressure(dr.reading.pressure),
+                pressure_unit: if opts.inhg { "inHg" } else { "hPa" },
+                battery: dr.reading.battery,
+                status: format!("{:?}", dr.reading.status),
+                age: dr.reading.age,
+                interval: dr.reading.interval,
+                radon_bq: dr.reading.radon,
+                radon_pci: dr.reading.radon.map(bq_to_pci),
+                radiation_rate: dr.reading.radiation_rate,
+                radiation_total: dr.reading.radiation_total,
+            })
+            .collect(),
+    };
+
+    opts.as_json(&json)
+}
+
+/// Format multiple device readings as CSV
+#[must_use]
+pub fn format_multi_reading_csv(readings: &[DeviceReading], opts: &FormatOptions) -> String {
+    let temp_header = if opts.fahrenheit {
+        "temperature_f"
+    } else {
+        "temperature_c"
+    };
+
+    let mut output = if opts.no_header {
+        String::new()
+    } else {
+        format!(
+            "device,co2,{},humidity,{},battery,status,age,interval,{},radiation_usvh,radiation_msv\n",
+            temp_header,
+            opts.pressure_csv_header(),
+            opts.radon_csv_header()
+        )
+    };
+
+    for dr in readings {
+        let radon_value = dr
+            .reading
+            .radon
+            .map(|r| format!("{:.2}", opts.convert_radon(r)))
+            .unwrap_or_default();
+        let radiation_rate = dr
+            .reading
+            .radiation_rate
+            .map(|r| format!("{:.3}", r))
+            .unwrap_or_default();
+        let radiation_total = dr
+            .reading
+            .radiation_total
+            .map(|r| format!("{:.3}", r))
+            .unwrap_or_default();
+
+        output.push_str(&format!(
+            "{},{},{:.1},{},{:.2},{},{:?},{},{},{},{},{}\n",
+            csv_escape(&dr.identifier),
+            dr.reading.co2,
+            opts.convert_temp(dr.reading.temperature),
+            dr.reading.humidity,
+            opts.convert_pressure(dr.reading.pressure),
+            dr.reading.battery,
+            dr.reading.status,
+            dr.reading.age,
+            dr.reading.interval,
+            radon_value,
+            radiation_rate,
+            radiation_total
+        ));
+    }
+
+    output
 }
 
 // ============================================================================
@@ -553,21 +747,21 @@ pub fn format_history_text(history: &[HistoryRecord], opts: &FormatOptions) -> S
 
         if let Some(radon) = record.radon {
             output.push_str(&format!(
-                "{}  {:>10}  {:>9}  {:>5}%    {:>6.1} hPa\n",
+                "{}  {:>10}  {:>9}  {:>5}%    {:>10}\n",
                 ts,
                 opts.format_radon(radon),
                 opts.format_temp(record.temperature),
                 record.humidity,
-                record.pressure
+                opts.format_pressure(record.pressure)
             ));
         } else {
             output.push_str(&format!(
-                "{}  {:>5} ppm  {:>9}  {:>5}%    {:>6.1} hPa\n",
+                "{}  {:>5} ppm  {:>9}  {:>5}%    {:>10}\n",
                 ts,
                 record.co2,
                 opts.format_temp(record.temperature),
                 record.humidity,
-                record.pressure
+                opts.format_pressure(record.pressure)
             ));
         }
     }
@@ -591,8 +785,9 @@ pub fn format_history_csv(history: &[HistoryRecord], opts: &FormatOptions) -> St
         String::new()
     } else {
         format!(
-            "timestamp,co2,{},humidity,pressure,{}\n",
+            "timestamp,co2,{},humidity,{},{}\n",
             temp_header,
+            opts.pressure_csv_header(),
             opts.radon_csv_header()
         )
     };
@@ -607,19 +802,19 @@ pub fn format_history_csv(history: &[HistoryRecord], opts: &FormatOptions) -> St
             .map(|r| format!("{:.2}", opts.convert_radon(r)))
             .unwrap_or_default();
         output.push_str(&format!(
-            "{},{},{:.1},{},{:.1},{}\n",
+            "{},{},{:.1},{},{:.2},{}\n",
             ts,
             record.co2,
             opts.convert_temp(record.temperature),
             record.humidity,
-            record.pressure,
+            opts.convert_pressure(record.pressure),
             radon_value
         ));
     }
     output
 }
 
-/// Format history as JSON with temperature unit conversion applied.
+/// Format history as JSON with temperature and pressure unit conversion applied.
 pub fn format_history_json(history: &[HistoryRecord], opts: &FormatOptions) -> Result<String> {
     #[derive(Serialize)]
     struct HistoryRecordJson {
@@ -629,6 +824,7 @@ pub fn format_history_json(history: &[HistoryRecord], opts: &FormatOptions) -> R
         temperature_unit: &'static str,
         humidity: u8,
         pressure: f32,
+        pressure_unit: &'static str,
         #[serde(skip_serializing_if = "Option::is_none")]
         radon_bq: Option<u32>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -648,7 +844,8 @@ pub fn format_history_json(history: &[HistoryRecord], opts: &FormatOptions) -> R
                 temperature: opts.convert_temp(r.temperature),
                 temperature_unit: if opts.fahrenheit { "F" } else { "C" },
                 humidity: r.humidity,
-                pressure: r.pressure,
+                pressure: opts.convert_pressure(r.pressure),
+                pressure_unit: if opts.inhg { "inHg" } else { "hPa" },
                 radon_bq: r.radon,
                 radon_pci: r.radon.map(bq_to_pci),
             }
@@ -698,7 +895,7 @@ pub fn format_watch_line(reading: &CurrentReading, opts: &FormatOptions) -> Stri
 
     // Pressure (if available)
     if reading.pressure > 0.0 {
-        parts.push(format!("{:.1} hPa", reading.pressure));
+        parts.push(opts.format_pressure(reading.pressure));
     }
 
     // Battery is always shown
@@ -716,8 +913,9 @@ pub fn format_watch_csv_header(opts: &FormatOptions) -> String {
         "temperature_c"
     };
     format!(
-        "timestamp,co2,{},humidity,pressure,battery,status,{},radiation_usvh\n",
+        "timestamp,co2,{},humidity,{},battery,status,{},radiation_usvh\n",
         temp_header,
+        opts.pressure_csv_header(),
         opts.radon_csv_header()
     )
 }
@@ -740,12 +938,12 @@ pub fn format_watch_csv_line(reading: &CurrentReading, opts: &FormatOptions) -> 
         .unwrap_or_default();
 
     format!(
-        "{},{},{:.1},{},{:.1},{},{:?},{},{}\n",
+        "{},{},{:.1},{},{:.2},{},{:?},{},{}\n",
         ts,
         reading.co2,
         opts.convert_temp(reading.temperature),
         reading.humidity,
-        reading.pressure,
+        opts.convert_pressure(reading.pressure),
         reading.battery,
         reading.status,
         radon_value,
@@ -961,7 +1159,7 @@ mod tests {
         let reading = make_aranet4_reading();
         let opts = FormatOptions::new(true, false);
         let result = format_reading_csv(&reading, &opts);
-        assert!(result.starts_with("co2,temperature_c,humidity,pressure,battery,status,age,interval,radon_pci,radiation_usvh,radiation_msv\n"));
+        assert!(result.starts_with("co2,temperature_c,humidity,pressure_hpa,battery,status,age,interval,radon_pci,radiation_usvh,radiation_msv\n"));
     }
 
     #[test]

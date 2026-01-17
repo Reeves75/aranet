@@ -6,7 +6,7 @@ use anyhow::Result;
 use aranet_core::{BluetoothRange, MeasurementInterval};
 
 use crate::cli::{BluetoothRangeSetting, DeviceSetting};
-use crate::util::{connect_device, require_device};
+use crate::util::{connect_device, require_device_interactive};
 
 pub async fn cmd_set(
     device: Option<String>,
@@ -14,7 +14,7 @@ pub async fn cmd_set(
     setting: DeviceSetting,
     quiet: bool,
 ) -> Result<()> {
-    let identifier = require_device(device)?;
+    let identifier = require_device_interactive(device).await?;
 
     if !quiet {
         eprintln!("Connecting to {}...", identifier);

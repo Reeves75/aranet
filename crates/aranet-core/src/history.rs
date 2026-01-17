@@ -7,10 +7,10 @@
 //!
 //! | Device | History Support | Notes |
 //! |--------|-----------------|-------|
-//! | Aranet4 | ✅ Full | CO₂, temperature, pressure, humidity |
-//! | Aranet2 | ✅ Full | Temperature, humidity |
-//! | AranetRn+ (Radon) | ✅ Full | Radon, temperature, pressure, humidity |
-//! | Aranet Radiation | ⚠️ Partial | **History download not yet implemented** |
+//! | Aranet4 | Full | CO₂, temperature, pressure, humidity |
+//! | Aranet2 | Full | Temperature, humidity |
+//! | AranetRn+ (Radon) | Full | Radon, temperature, pressure, humidity |
+//! | Aranet Radiation | Partial | **History download not yet implemented** |
 //!
 //! **Note:** Aranet Radiation devices do not currently support history download.
 //! The `radiation_rate` and `radiation_total` fields in [`HistoryRecord`] are

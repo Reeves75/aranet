@@ -11,23 +11,58 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.3] - 2026-01-17 <Badge text="Current" variant="success" />
+
 ### Added
+
+- **Pressure unit conversion** (`--inhg` / `--hpa` flags)
+  - Display pressure in inches of mercury (inHg) with `--inhg`
+  - Explicitly request hPa with `--hpa` (default)
+  - Configurable via config file (`inhg = true`)
+- **`doctor` command** for BLE diagnostics
+  - Checks Bluetooth adapter availability and permissions
+  - Scans for devices to verify BLE functionality
+  - Platform-specific troubleshooting tips (macOS, Linux, Windows)
+- **`alias` command** for device management
+  - `alias list` - Show all saved device aliases
+  - `alias set <name> <address>` - Create a friendly name for a device
+  - `alias remove <name>` - Delete an alias
+  - Use aliases anywhere a device address is expected
+- **Passive read mode** (`--passive` flag on `read`)
+  - Read sensor data from BLE advertisements without connecting
+  - Requires Smart Home integration enabled on the device
+- **Multi-device read support**
+  - Specify multiple devices: `aranet read -d device1 -d device2`
+  - Parallel reading from all devices
+  - Combined output in text, JSON, and CSV formats
+- **Interactive device picker**
+  - When no device is specified, scan and present a selection menu
+- **History date filters** (`--since` / `--until`)
+  - Filter history by date range (RFC3339 or YYYY-MM-DD format)
+- **Progress bars for history download**
+  - Visual progress indicator with percentage and current parameter
 - Full AranetRn+ (Radon) sensor support with 4-byte radon history values
 - History V2 protocol parsing with 10-byte header format
 - `aranet-types` crate for platform-agnostic shared types
 - WebAssembly module foundation (`aranet-wasm`)
 
 ### Fixed
+
 - UUID mappings for history characteristics
 - V2 history parsing header format
 
 ### Changed
+
+- Replaced unmaintained `atty` crate with `std::io::IsTerminal`
+- Refactored `cmd_history` to use `HistoryArgs` struct (clippy compliance)
 - `HistoryRecord` now includes optional `radon: Option<u32>` field
 - Improved error messages for BLE connection failures
 
 ---
 
-## [0.1.2] - 2026-01-16 <Badge text="Current" variant="success" />
+## [0.1.2] - 2026-01-16
 
 ### Core Library (aranet-core)
 

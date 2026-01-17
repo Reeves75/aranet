@@ -1,5 +1,7 @@
 //! Command implementations for the CLI.
 
+mod alias;
+mod doctor;
 mod history;
 mod info;
 mod read;
@@ -8,9 +10,11 @@ mod set;
 mod status;
 mod watch;
 
-pub use history::cmd_history;
+pub use alias::{AliasAction, cmd_alias};
+pub use doctor::cmd_doctor;
+pub use history::{HistoryArgs, cmd_history};
 pub use info::cmd_info;
-pub use read::cmd_read;
+pub use read::{DeviceReading, cmd_read};
 pub use scan::cmd_scan;
 pub use set::cmd_set;
 pub use status::cmd_status;

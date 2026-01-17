@@ -25,6 +25,18 @@ pub struct DeviceArgs {
     pub timeout: u64,
 }
 
+/// Device arguments that support multiple devices
+#[derive(Debug, Clone, Args)]
+pub struct MultiDeviceArgs {
+    /// Device address(es) - can be specified multiple times, or comma-separated
+    #[arg(short, long, value_delimiter = ',', env = "ARANET_DEVICE")]
+    pub device: Vec<String>,
+
+    /// Connection timeout in seconds (per device)
+    #[arg(short = 'T', long, default_value = "30")]
+    pub timeout: u64,
+}
+
 /// Reusable output format arguments
 #[derive(Debug, Clone, Args)]
 pub struct OutputArgs {
@@ -47,6 +59,14 @@ pub struct OutputArgs {
     /// Use pCi/L for radon (default US units, overrides config)
     #[arg(long, conflicts_with = "bq")]
     pub pci: bool,
+
+    /// Use inHg for pressure display (overrides --hpa and config)
+    #[arg(long, conflicts_with = "hpa")]
+    pub inhg: bool,
+
+    /// Use hPa for pressure display (default, overrides config)
+    #[arg(long, conflicts_with = "inhg")]
+    pub hpa: bool,
 
     /// Omit header row in CSV output (useful for appending)
     #[arg(long)]
@@ -74,6 +94,17 @@ impl OutputArgs {
             false
         } else {
             config_bq
+        }
+    }
+
+    /// Resolve inhg setting: explicit flags override config
+    pub fn resolve_inhg(&self, config_inhg: bool) -> bool {
+        if self.inhg {
+            true
+        } else if self.hpa {
+            false
+        } else {
+            config_inhg
         }
     }
 }
@@ -127,13 +158,17 @@ pub enum Commands {
         no_header: bool,
     },
 
-    /// Read current sensor values from a device
+    /// Read current sensor values from one or more devices
     Read {
         #[command(flatten)]
-        device: DeviceArgs,
+        device: MultiDeviceArgs,
 
         #[command(flatten)]
         output: OutputArgs,
+
+        /// Read from BLE advertisements without connecting (requires Smart Home enabled)
+        #[arg(long)]
+        passive: bool,
     },
 
     /// Quick one-line status from a device
@@ -156,6 +191,14 @@ pub enum Commands {
         /// Number of records to retrieve (0 for all)
         #[arg(short, long, default_value = "0")]
         count: u32,
+
+        /// Filter records since this date/time (RFC3339 or YYYY-MM-DD)
+        #[arg(long)]
+        since: Option<String>,
+
+        /// Filter records until this date/time (RFC3339 or YYYY-MM-DD)
+        #[arg(long)]
+        until: Option<String>,
     },
 
     /// Display device information
@@ -204,11 +247,43 @@ pub enum Commands {
         action: ConfigAction,
     },
 
+    /// Manage device aliases (friendly names)
+    Alias {
+        #[command(subcommand)]
+        action: AliasSubcommand,
+    },
+
     /// Generate shell completions
     Completions {
         /// Shell to generate completions for
         #[arg(value_enum)]
         shell: clap_complete::Shell,
+    },
+
+    /// Run BLE diagnostics and permission checks
+    Doctor,
+}
+
+/// Alias subcommands
+#[derive(Debug, Clone, Subcommand)]
+pub enum AliasSubcommand {
+    /// List all device aliases
+    List,
+
+    /// Set a device alias
+    Set {
+        /// Friendly name for the device (e.g., "living-room", "office")
+        name: String,
+
+        /// Device address (MAC address or UUID)
+        address: String,
+    },
+
+    /// Remove a device alias
+    #[command(alias = "rm")]
+    Remove {
+        /// Alias name to remove
+        name: String,
     },
 }
 

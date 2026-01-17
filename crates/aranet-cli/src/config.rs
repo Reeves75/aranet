@@ -1,5 +1,6 @@
 //! Configuration file management.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -28,6 +29,10 @@ pub struct Config {
     /// Connection timeout in seconds
     #[serde(default)]
     pub timeout: Option<u64>,
+
+    /// Device aliases (friendly name -> device address)
+    #[serde(default)]
+    pub aliases: HashMap<String, String>,
 }
 
 impl Config {
@@ -73,9 +78,30 @@ impl Config {
     }
 }
 
-/// Resolve device from arg, env var, or config
+/// Resolve device from arg, env var, or config.
+/// Also resolves aliases: if the device matches an alias name, returns the address.
 pub fn resolve_device(device: Option<String>, config: &Config) -> Option<String> {
-    device.or_else(|| config.device.clone())
+    device
+        .map(|d| resolve_alias(&d, config))
+        .or_else(|| config.device.clone())
+}
+
+/// Resolve multiple devices, applying alias resolution to each.
+/// Returns an empty Vec if no devices are specified.
+pub fn resolve_devices(devices: Vec<String>, config: &Config) -> Vec<String> {
+    devices
+        .into_iter()
+        .map(|d| resolve_alias(&d, config))
+        .collect()
+}
+
+/// Resolve an alias to its device address, or return the original if not an alias.
+pub fn resolve_alias(device: &str, config: &Config) -> String {
+    config
+        .aliases
+        .get(device)
+        .cloned()
+        .unwrap_or_else(|| device.to_string())
 }
 
 /// Resolve timeout: use provided value, fall back to config, then default

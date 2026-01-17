@@ -13,9 +13,12 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use tracing_subscriber::EnvFilter;
 
-use cli::{Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
-use commands::{cmd_history, cmd_info, cmd_read, cmd_scan, cmd_set, cmd_status, cmd_watch};
-use config::{Config, resolve_device, resolve_timeout};
+use cli::{AliasSubcommand, Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
+use commands::{
+    AliasAction, HistoryArgs, cmd_alias, cmd_doctor, cmd_history, cmd_info, cmd_read, cmd_scan,
+    cmd_set, cmd_status, cmd_watch,
+};
+use config::{Config, resolve_device, resolve_devices, resolve_timeout};
 use format::FormatOptions;
 
 #[tokio::main]
@@ -32,6 +35,11 @@ async fn main() -> Result<()> {
     // Handle config commands early
     if let Commands::Config { ref action } = cli.command {
         return handle_config_command(action);
+    }
+
+    // Handle alias commands early
+    if let Commands::Alias { ref action } = cli.command {
+        return handle_alias_command(action, cli.quiet);
     }
 
     // Load config for device resolution
@@ -59,6 +67,8 @@ async fn main() -> Result<()> {
     let config_fahrenheit = config.fahrenheit;
     // Base bq from config (currently always false, but future-proofed)
     let config_bq = false;
+    // Base inhg from config (currently always false, but future-proofed)
+    let config_inhg = false;
     // Parse config format (used as fallback when command format is default)
     let config_format = config.format.as_deref().and_then(parse_format);
 
@@ -78,15 +88,17 @@ async fn main() -> Result<()> {
         Commands::Read {
             device,
             output: out,
+            passive,
         } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
-            let dev = resolve_device(device.device, &config);
+            let devices = resolve_devices(device.device, &config);
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
             let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
                 .with_no_header(out.no_header)
                 .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq));
-            cmd_read(dev, timeout, format, output, quiet, &opts).await?;
+                .with_bq(out.resolve_bq(config_bq))
+                .with_inhg(out.resolve_inhg(config_inhg));
+            cmd_read(devices, timeout, format, output, quiet, passive, &opts).await?;
         }
         Commands::Status {
             device,
@@ -98,13 +110,16 @@ async fn main() -> Result<()> {
             let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
                 .with_no_header(out.no_header)
                 .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq));
+                .with_bq(out.resolve_bq(config_bq))
+                .with_inhg(out.resolve_inhg(config_inhg));
             cmd_status(dev, timeout, format, output, &opts).await?;
         }
         Commands::History {
             device,
             output: out,
             count,
+            since,
+            until,
         } => {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device(device.device, &config);
@@ -113,8 +128,20 @@ async fn main() -> Result<()> {
             let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
                 .with_no_header(out.no_header)
                 .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq));
-            cmd_history(dev, count, timeout, format, output, quiet, &opts).await?;
+                .with_bq(out.resolve_bq(config_bq))
+                .with_inhg(out.resolve_inhg(config_inhg));
+            cmd_history(HistoryArgs {
+                device: dev,
+                count,
+                since,
+                until,
+                timeout,
+                format,
+                output,
+                quiet,
+                opts: &opts,
+            })
+            .await?;
         }
         Commands::Info {
             device,
@@ -146,14 +173,31 @@ async fn main() -> Result<()> {
             let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
                 .with_no_header(out.no_header)
                 .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq));
+                .with_bq(out.resolve_bq(config_bq))
+                .with_inhg(out.resolve_inhg(config_inhg));
             cmd_watch(dev, interval, count, timeout, format, output, &opts).await?;
         }
+        Commands::Doctor => {
+            cmd_doctor(cli.verbose).await?;
+        }
         Commands::Config { .. } => unreachable!(),
+        Commands::Alias { .. } => unreachable!(),
         Commands::Completions { .. } => unreachable!(),
     }
 
     Ok(())
+}
+
+fn handle_alias_command(action: &AliasSubcommand, quiet: bool) -> Result<()> {
+    let alias_action = match action {
+        AliasSubcommand::List => AliasAction::List,
+        AliasSubcommand::Set { name, address } => AliasAction::Set {
+            name: name.clone(),
+            address: address.clone(),
+        },
+        AliasSubcommand::Remove { name } => AliasAction::Remove { name: name.clone() },
+    };
+    cmd_alias(alias_action, quiet)
 }
 
 fn handle_config_command(action: &ConfigAction) -> Result<()> {

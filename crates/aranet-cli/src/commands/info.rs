@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 
 use crate::cli::OutputFormat;
 use crate::format::{FormatOptions, format_info_csv, format_info_text};
-use crate::util::{connect_device, require_device, write_output};
+use crate::util::{connect_device, require_device_interactive, write_output};
 
 pub async fn cmd_info(
     device: Option<String>,
@@ -17,7 +17,7 @@ pub async fn cmd_info(
     quiet: bool,
     opts: &FormatOptions,
 ) -> Result<()> {
-    let identifier = require_device(device)?;
+    let identifier = require_device_interactive(device).await?;
 
     if !quiet && matches!(format, OutputFormat::Text) {
         eprintln!("Connecting to {}...", identifier);

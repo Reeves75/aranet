@@ -15,7 +15,7 @@ use crate::format::{
     FormatOptions, format_reading_json, format_watch_csv_header, format_watch_csv_line,
     format_watch_line,
 };
-use crate::util::{require_device, write_output};
+use crate::util::{require_device_interactive, write_output};
 
 /// Minimum backoff delay for reconnection attempts
 const MIN_BACKOFF_SECS: u64 = 2;
@@ -31,7 +31,7 @@ pub async fn cmd_watch(
     output: Option<&PathBuf>,
     opts: &FormatOptions,
 ) -> Result<()> {
-    let identifier = require_device(device)?;
+    let identifier = require_device_interactive(device).await?;
 
     if count > 0 {
         eprintln!(

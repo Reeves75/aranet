@@ -11,9 +11,16 @@ The `aranet` CLI provides a fast, scriptable interface for interacting with Aran
 
 - **Device Discovery** — Scan for nearby Aranet devices via Bluetooth
 - **Current Readings** — Read live sensor values (CO₂, temperature, humidity, pressure, radon, radiation)
-- **Historical Data** — Download measurement history with timestamps
+- **Multi-Device Support** — Read from multiple devices in parallel
+- **Passive Mode** — Read from BLE advertisements without connecting
+- **Historical Data** — Download measurement history with timestamps and date filters
+- **Progress Bars** — Visual progress for history downloads
+- **Device Aliases** — Save friendly names for device addresses
 - **Device Info** — Query device metadata (serial, firmware, model)
 - **Settings** — Read and modify device configuration
+- **Diagnostics** — `doctor` command for BLE troubleshooting
+- **Unit Conversion** — Fahrenheit, inHg pressure, pCi/L radon options
+- **Interactive Picker** — Select devices from a menu when none specified
 - **Export** — Output in text, JSON, or CSV formats
 - **Shell Completions** — Auto-complete for bash, zsh, fish, PowerShell
 
@@ -51,6 +58,9 @@ aranet history --device <ADDRESS> --output data.csv
 | `-o, --output <FILE>` | Write output to file instead of stdout |
 | `--json` | Output in JSON format (shorthand for `--format json`) |
 | `--no-color` | Disable colored output |
+| `--fahrenheit` | Display temperature in Fahrenheit |
+| `--inhg` | Display pressure in inches of mercury |
+| `--bq` | Display radon in Bq/m³ (instead of pCi/L) |
 | `-h, --help` | Show help information |
 | `--version` | Show version number |
 

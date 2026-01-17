@@ -26,6 +26,11 @@ Connect to your Aranet devices via Bluetooth LE to read measurements, download h
   - Auto-reconnection with configurable backoff
   - Real-time streaming and event system
 - **aranet-cli** — Command-line interface for quick readings and data export
+  - Multi-device reading with parallel connections
+  - Interactive device picker, device aliases
+  - Passive reading from BLE advertisements
+  - Progress bars for history download
+  - `--since`/`--until` date filters, `--inhg` pressure unit
 - **aranet-tui** — Terminal UI dashboard for real-time monitoring
 - **aranet-gui** — Desktop application built with egui
 - **aranet-wasm** — WebAssembly module for browser integration *(planned)*
@@ -81,6 +86,27 @@ aranet history <DEVICE_ADDRESS> --output history.csv
 aranet info <DEVICE_ADDRESS>
 ```
 
+### Read from multiple devices
+
+```bash
+aranet read -d device1 -d device2
+aranet read -d living-room,bedroom  # using aliases
+```
+
+### Manage device aliases
+
+```bash
+aranet alias set living-room AA:BB:CC:DD:EE:FF
+aranet alias list
+aranet read -d living-room
+```
+
+### Diagnose BLE issues
+
+```bash
+aranet doctor
+```
+
 ## Project Structure
 
 ```
@@ -99,10 +125,10 @@ aranet/
 
 | Device | Sensors | Current | History | Status |
 |--------|---------|---------|---------|--------|
-| Aranet4 | CO₂, Temperature, Pressure, Humidity | ✅ | ✅ | Fully tested |
-| Aranet2 | Temperature, Humidity | ✅ | ✅ | Supported |
-| AranetRn+ (Radon) | Radon, Temperature, Pressure, Humidity | ✅ | ✅ | Fully tested |
-| Aranet Radiation | Dose Rate, Total Dose | ✅ | ⚠️ | Supported (history not yet implemented) |
+| Aranet4 | CO₂, Temperature, Pressure, Humidity | Yes | Yes | Fully tested |
+| Aranet2 | Temperature, Humidity | Yes | Yes | Supported |
+| AranetRn+ (Radon) | Radon, Temperature, Pressure, Humidity | Yes | Yes | Fully tested |
+| Aranet Radiation | Dose Rate, Total Dose | Yes | Partial | Supported (history not yet implemented) |
 
 ## Requirements
 
@@ -134,4 +160,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+Made with love by [Cameron Rye](https://rye.dev/)

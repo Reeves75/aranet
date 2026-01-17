@@ -128,7 +128,7 @@ pub use traits::AranetDevice;
 pub type SharedDevice = std::sync::Arc<Device>;
 
 // New module exports
-pub use advertisement::{AdvertisementData, parse_advertisement};
+pub use advertisement::{AdvertisementData, parse_advertisement, parse_advertisement_with_name};
 pub use commands::{
     HISTORY_V1_REQUEST, HISTORY_V2_REQUEST, SET_BLUETOOTH_RANGE, SET_INTERVAL, SET_SMART_HOME,
 };

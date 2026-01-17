@@ -1,20 +1,81 @@
 //! Utility functions for CLI operations.
 
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 use std::path::PathBuf;
 use std::time::Duration;
 
-use anyhow::{Context, Result};
-use aranet_core::Device;
+use anyhow::{Context, Result, bail};
+use aranet_core::{Device, ScanOptions, scan};
+use dialoguer::{Select, theme::ColorfulTheme};
 
-/// Get device identifier, with helpful error message
+/// Get device identifier, with helpful error message.
+/// Used for non-interactive contexts (e.g., scripts, piped input).
+#[allow(dead_code)]
 pub fn require_device(device: Option<String>) -> Result<String> {
     device.ok_or_else(|| {
         anyhow::anyhow!(
             "No device specified. Use --device <ADDRESS> or set ARANET_DEVICE environment variable.\n\
-             Run 'aranet scan' to find nearby devices."
+             Run 'aranet scan' to find nearby devices, or omit --device for interactive selection."
         )
     })
+}
+
+/// Get device identifier, scanning and prompting interactively if none specified.
+pub async fn require_device_interactive(device: Option<String>) -> Result<String> {
+    if let Some(dev) = device {
+        return Ok(dev);
+    }
+
+    // Check if we're in an interactive terminal
+    if !io::stdin().is_terminal() || !io::stderr().is_terminal() {
+        bail!(
+            "No device specified. Use --device <ADDRESS> or set ARANET_DEVICE environment variable.\n\
+             Run 'aranet scan' to find nearby devices."
+        );
+    }
+
+    eprintln!("No device specified. Scanning for nearby devices...");
+
+    let options = ScanOptions {
+        duration: Duration::from_secs(5),
+        filter_aranet_only: true,
+    };
+
+    let devices = scan::scan_with_options(options)
+        .await
+        .context("Failed to scan for devices")?;
+
+    if devices.is_empty() {
+        bail!(
+            "No Aranet devices found nearby.\n\
+             Make sure your device is powered on and in range."
+        );
+    }
+
+    if devices.len() == 1 {
+        let dev = &devices[0];
+        let name = dev.name.as_deref().unwrap_or("Unknown");
+        eprintln!("Found 1 device: {} ({})", name, dev.address);
+        return Ok(dev.address.clone());
+    }
+
+    // Build selection items
+    let items: Vec<String> = devices
+        .iter()
+        .map(|d| {
+            let name = d.name.as_deref().unwrap_or("Unknown");
+            format!("{} ({})", name, d.address)
+        })
+        .collect();
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select a device")
+        .items(&items)
+        .default(0)
+        .interact()
+        .context("Failed to get user selection")?;
+
+    Ok(devices[selection].address.clone())
 }
 
 /// Connect to a device with timeout and improved error messages.

@@ -45,6 +45,26 @@ aranet read --device <DEVICE_ADDRESS>
 ```bash
 aranet history --device <DEVICE_ADDRESS>
 aranet history --device <DEVICE_ADDRESS> --count 100 --format csv --output history.csv
+
+# Filter by date range
+aranet history --device <DEVICE_ADDRESS> --since 2026-01-15 --until 2026-01-16
+```
+
+### Read from multiple devices
+
+```bash
+# Specify multiple devices
+aranet read -d device1 -d device2
+
+# Or comma-separated
+aranet read -d living-room,bedroom,office
+```
+
+### Passive read mode
+
+```bash
+# Read from BLE advertisements without connecting (requires Smart Home enabled)
+aranet read --device <DEVICE_ADDRESS> --passive
 ```
 
 ### Watch real-time data
@@ -66,6 +86,38 @@ aranet set --device <DEVICE_ADDRESS> interval 5
 aranet set --device <DEVICE_ADDRESS> range extended
 ```
 
+### Manage device aliases
+
+```bash
+# Create an alias for a device
+aranet alias set living-room AA:BB:CC:DD:EE:FF
+
+# List all aliases
+aranet alias list
+
+# Use aliases instead of addresses
+aranet read -d living-room
+
+# Remove an alias
+aranet alias remove living-room
+```
+
+### Diagnose BLE issues
+
+```bash
+aranet doctor
+```
+
+### Pressure units
+
+```bash
+# Display pressure in inches of mercury
+aranet read --device <DEVICE_ADDRESS> --inhg
+
+# Explicitly use hPa (default)
+aranet read --device <DEVICE_ADDRESS> --hpa
+```
+
 ## Configuration
 
 The CLI supports persistent configuration via a TOML file:
@@ -85,11 +137,14 @@ aranet config show
 ```
 
 Configuration options:
+
 - `device` — Default device address
 - `format` — Default output format (`text`, `json`, `csv`)
 - `timeout` — Connection timeout in seconds
 - `no_color` — Disable colored output
 - `fahrenheit` — Use Fahrenheit for temperature display
+- `inhg` — Use inHg for pressure display
+- `bq` — Use Bq/m3 for radon (instead of pCi/L)
 
 ## Output Formats
 
@@ -131,5 +186,4 @@ MIT
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
-
+Made with love by [Cameron Rye](https://rye.dev/)

@@ -27,22 +27,18 @@ import { Card, CardGrid, Badge, Tabs, TabItem } from '@astrojs/starlight/compone
 
 <div class="not-content device-grid">
   <div class="device-card">
-    <span class="device-icon">🌬️</span>
     <span class="device-name">Aranet4</span>
     <span class="device-desc">CO₂, Temperature, Humidity, Pressure</span>
   </div>
   <div class="device-card">
-    <span class="device-icon">🌡️</span>
     <span class="device-name">Aranet2</span>
     <span class="device-desc">Temperature, Humidity</span>
   </div>
   <div class="device-card">
-    <span class="device-icon">☢️</span>
     <span class="device-name">AranetRn+</span>
     <span class="device-desc">Radon, Temperature, Pressure, Humidity</span>
   </div>
   <div class="device-card">
-    <span class="device-icon">⚛️</span>
     <span class="device-name">Aranet Radiation</span>
     <span class="device-desc">Dose Rate (µSv/h), Total Dose (mSv)</span>
   </div>
@@ -98,6 +94,18 @@ aranet read <DEVICE_ADDRESS>
 ```bash
 # Download measurement history
 aranet history <DEVICE_ADDRESS> --output history.csv
+
+# Filter by date range
+aranet history <DEVICE_ADDRESS> --since 2026-01-15
+```
+  </TabItem>
+  <TabItem label="Multi-Device">
+```bash
+# Read from multiple devices
+aranet read -d living-room -d bedroom
+
+# Setup device aliases
+aranet alias set living-room AA:BB:CC:DD:EE:FF
 ```
   </TabItem>
 </Tabs>
@@ -112,7 +120,7 @@ aranet history <DEVICE_ADDRESS> --output history.csv
     Platform-agnostic types shared between native and WASM implementations.
   </Card>
   <Card title="aranet-cli" icon="seti:shell">
-    Command-line interface for quick readings and data export.
+    Feature-rich CLI: multi-device reading, device aliases, passive mode, progress bars, date filters.
   </Card>
   <Card title="aranet-wasm" icon="seti:wasm">
     WebAssembly module for browser-based sensor access via Web Bluetooth.

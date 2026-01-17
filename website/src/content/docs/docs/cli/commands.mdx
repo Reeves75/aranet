@@ -35,7 +35,7 @@ Found 2 devices:
 
 ## read
 
-Read current sensor measurements from a device.
+Read current sensor measurements from one or more devices.
 
 ```bash
 aranet read [OPTIONS]
@@ -45,13 +45,17 @@ aranet read [OPTIONS]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `-d, --device <ADDRESS>` | auto-detect | Device address (MAC or UUID) |
-| `-f, --format <FORMAT>` | `text` | Output format: `text`, `json` |
+| `-d, --device <ADDRESS>` | interactive | Device address(es), can be specified multiple times or comma-separated |
+| `-f, --format <FORMAT>` | `text` | Output format: `text`, `json`, `csv` |
+| `--passive` | - | Read from BLE advertisements without connecting |
+| `--inhg` | - | Display pressure in inches of mercury |
+| `--hpa` | - | Display pressure in hPa (default) |
+| `--fahrenheit` | - | Display temperature in Fahrenheit |
 
 ### Example
 
 <Tabs>
-  <TabItem label="Text">
+  <TabItem label="Single Device">
 ```bash
 $ aranet read --device AA:BB:CC:DD:EE:FF
 
@@ -60,6 +64,27 @@ Temperature: 22.4°C
 Humidity:    45%
 Pressure:    1013.2 hPa
 Battery:     87%
+```
+  </TabItem>
+  <TabItem label="Multi-Device">
+```bash
+$ aranet read -d living-room -d bedroom
+
+-- living-room --
+CO₂:         847 ppm   [GREEN]
+Temperature: 22.4°C
+...
+
+-- bedroom --
+CO₂:         523 ppm   [GREEN]
+Temperature: 20.1°C
+...
+```
+  </TabItem>
+  <TabItem label="Passive Mode">
+```bash
+# Read from advertisements without connecting
+$ aranet read --device AA:BB:CC:DD:EE:FF --passive
 ```
   </TabItem>
   <TabItem label="JSON">
@@ -80,6 +105,10 @@ $ aranet read --device AA:BB:CC:DD:EE:FF --format json
   </TabItem>
 </Tabs>
 
+<Aside>
+  When no device is specified, an interactive picker will scan for nearby devices and let you choose.
+</Aside>
+
 ---
 
 ## history
@@ -94,17 +123,32 @@ aranet history [OPTIONS]
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `-d, --device <ADDRESS>` | auto-detect | Device address |
+| `-d, --device <ADDRESS>` | interactive | Device address |
 | `-c, --count <N>` | `0` (all) | Number of records to retrieve |
 | `-f, --format <FORMAT>` | `text` | Output format: `text`, `json`, `csv` |
+| `--since <DATE>` | - | Filter records since this date (RFC3339 or YYYY-MM-DD) |
+| `--until <DATE>` | - | Filter records until this date |
+| `-o, --output <FILE>` | - | Write output to file |
 
 ### Example
 
+<Tabs>
+  <TabItem label="Basic">
 ```bash
 $ aranet history --device AA:BB:CC:DD:EE:FF --output history.csv --format csv
 
+Downloading history...
+[==========] 100% Download complete
 Downloaded 1440 records to history.csv
 ```
+  </TabItem>
+  <TabItem label="Date Filter">
+```bash
+# Download only records from a specific date range
+$ aranet history --device AA:BB:CC:DD:EE:FF --since 2026-01-15 --until 2026-01-16
+```
+  </TabItem>
+</Tabs>
 
 ---
 
@@ -279,6 +323,17 @@ no_color = false
 
 # Use Fahrenheit for temperature
 fahrenheit = false
+
+# Use inHg for pressure
+inhg = false
+
+# Use Bq/m³ for radon (instead of pCi/L)
+bq = false
+
+# Device aliases
+[aliases]
+living-room = "AA:BB:CC:DD:EE:FF"
+bedroom = "11:22:33:44:55:66"
 ```
 
 ---
@@ -304,5 +359,82 @@ aranet completions zsh > ~/.zfunc/_aranet
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+## alias
+
+Manage device aliases (friendly names for device addresses).
+
+```bash
+aranet alias <SUBCOMMAND>
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | Show all saved device aliases |
+| `set <name> <address>` | Create or update an alias |
+| `remove <name>` | Delete an alias |
+
+### Example
+
+```bash
+# Create an alias
+$ aranet alias set living-room AA:BB:CC:DD:EE:FF
+Added alias 'living-room' -> AA:BB:CC:DD:EE:FF
+
+# List all aliases
+$ aranet alias list
+Device Aliases:
+------------------------------------
+  living-room -> AA:BB:CC:DD:EE:FF
+  bedroom -> 11:22:33:44:55:66
+
+# Use alias instead of address
+$ aranet read -d living-room
+
+# Remove an alias
+$ aranet alias remove bedroom
+Removed alias 'bedroom'
+```
+
+<Aside>
+  Aliases are stored in your config file (`~/.config/aranet/config.toml`) under the `[aliases]` section.
+</Aside>
+
+---
+
+## doctor
+
+Run BLE diagnostics and permission checks to troubleshoot connectivity issues.
+
+```bash
+aranet doctor
+```
+
+### Example
+
+```bash
+$ aranet doctor
+
+Aranet Doctor - BLE Diagnostics
+
+Running diagnostics...
+
+Results:
+------------------------------------
+[PASS] Bluetooth Adapter: Found and accessible
+[PASS] BLE Scanning: Found 2 device(s): Aranet4 17C3C, AranetRn+ 306B8
+
+All checks passed! Your system is ready to use Aranet devices.
+```
+
+If there are issues, the doctor will provide platform-specific troubleshooting tips:
+
+- **macOS**: Bluetooth permissions in System Settings
+- **Linux**: BlueZ installation, bluetooth group membership
+- **Windows**: Bluetooth drivers and settings
+
+---
+
+Made with love by [Cameron Rye](https://rye.dev/)
 

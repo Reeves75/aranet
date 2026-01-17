@@ -26,7 +26,8 @@ Found 2 devices:
 ```
 
 <Aside>
-  The device address (MAC address on Linux/Windows, UUID on macOS) is used for all subsequent commands.
+  The device address (MAC address on Linux/Windows, UUID on macOS) is used for subsequent commands.
+  You can also save a friendly name with `aranet alias set living-room AA:BB:CC:DD:EE:FF`.
 </Aside>
 
 ## Read Current Values
@@ -34,7 +35,14 @@ Found 2 devices:
 Read the current sensor measurements:
 
 ```bash
+# Using device address
 aranet read --device AA:BB:CC:DD:EE:FF
+
+# Or using an alias
+aranet read -d living-room
+
+# Or let the interactive picker find devices
+aranet read
 ```
 
 Example output for Aranet4:
@@ -75,11 +83,16 @@ Manufacturer: SAF Tehnika
 Download historical measurements to a CSV file:
 
 ```bash
+# Download all history
 aranet history --device AA:BB:CC:DD:EE:FF --output history.csv
+
+# Filter by date range
+aranet history -d living-room --since 2026-01-15 --until 2026-01-16
 ```
 
 ```
 Downloading history from Aranet4 17C3C...
+[==========] 100% Download complete
 Retrieved 1,440 records (7 days at 5-minute intervals)
 Saved to: history.csv
 ```

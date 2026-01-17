@@ -71,7 +71,7 @@ let reading = CurrentReading::from_bytes_for_device(&data, DeviceType::Aranet2)?
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| `serde` | ✅ | Enables serialization/deserialization support |
+| `serde` | Yes | Enables serialization/deserialization support |
 
 ## Related Crates
 
@@ -90,4 +90,4 @@ MIT
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+Made with love by [Cameron Rye](https://rye.dev/)

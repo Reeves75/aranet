@@ -18,16 +18,19 @@ The Aranet project aims to be the definitive Rust ecosystem for Aranet environme
 | 4 | GUI Application | <Badge text="WIP" variant="caution" /> | egui shell works |
 | 5 | WASM Module | <Badge text="WIP" variant="caution" /> | Basic init/log, Web Bluetooth pending |
 
-## Phase 2: CLI Tool
+## Phase 2: CLI Tool (Complete)
 
-<Steps>
-1. Wire `scan` command to aranet-core
-2. Wire `read` command with JSON output
-3. Wire `history` command with CSV export
-4. Wire `info` and `set` commands
-5. Add colored output with status indicators
-6. Add progress bars for history download
-</Steps>
+All CLI features implemented:
+
+- `scan`, `read`, `status`, `info`, `history`, `set`, `watch`, `config`, `completions`
+- `doctor` command for BLE diagnostics
+- `alias` command for friendly device names
+- Multi-device read with parallel connections
+- Interactive device picker when no device specified
+- Passive read mode from BLE advertisements
+- History date filters (`--since` / `--until`)
+- Progress bars for history download
+- Pressure unit conversion (`--inhg` / `--hpa`)
 
 ## Phase 3: TUI Dashboard
 

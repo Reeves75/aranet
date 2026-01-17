@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::cli::OutputFormat;
 use crate::format::{FormatOptions, bq_to_pci, csv_escape, format_status};
-use crate::util::{connect_device, require_device, write_output};
+use crate::util::{connect_device, require_device_interactive, write_output};
 
 pub async fn cmd_status(
     device: Option<String>,
@@ -17,7 +17,7 @@ pub async fn cmd_status(
     output: Option<&PathBuf>,
     opts: &FormatOptions,
 ) -> Result<()> {
-    let identifier = require_device(device)?;
+    let identifier = require_device_interactive(device).await?;
 
     let device = connect_device(&identifier, timeout).await?;
 

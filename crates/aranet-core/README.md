@@ -108,4 +108,4 @@ MIT
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+Made with love by [Cameron Rye](https://rye.dev/)
