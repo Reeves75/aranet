@@ -825,19 +825,14 @@ mod tests {
     // format_scan_* tests
     // ========================================================================
 
+    // Note: DiscoveredDevice tests are skipped on Linux because bluez-async's
+    // DeviceId/AdapterId constructors are private, making it impossible to create
+    // test PeripheralIds. The formatting logic is still tested on macOS and Windows.
+
     /// Create a test PeripheralId for macOS (uses UUID)
     #[cfg(target_os = "macos")]
     fn make_test_peripheral_id() -> btleplug::platform::PeripheralId {
         btleplug::platform::PeripheralId::from(uuid::Uuid::nil())
-    }
-
-    /// Create a test PeripheralId for Linux (uses bluez DeviceId)
-    #[cfg(target_os = "linux")]
-    fn make_test_peripheral_id() -> btleplug::platform::PeripheralId {
-        use bluez_async::{AdapterId, DeviceId, MacAddress};
-        let adapter_id = AdapterId::new("/org/bluez/hci0");
-        let mac = MacAddress::new([0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
-        btleplug::platform::PeripheralId::from(DeviceId::new(adapter_id, mac))
     }
 
     /// Create a test PeripheralId for Windows (uses u64 address)
@@ -846,6 +841,7 @@ mod tests {
         btleplug::platform::PeripheralId(0xAABBCCDDEEFF)
     }
 
+    #[cfg(not(target_os = "linux"))]
     fn make_test_device(
         name: Option<&str>,
         address: &str,
@@ -873,6 +869,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "linux"))]
     fn test_format_scan_text_single_device() {
         let devices = vec![make_test_device(
             Some("Aranet4 12345"),
@@ -897,6 +894,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "linux"))]
     fn test_format_scan_csv_no_header() {
         let devices = vec![make_test_device(
             Some("Aranet4 12345"),
@@ -912,6 +910,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "linux"))]
     fn test_format_scan_json_structure() {
         let devices = vec![make_test_device(
             Some("Aranet4 12345"),

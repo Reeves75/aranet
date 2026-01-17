@@ -241,7 +241,6 @@ dependencies = [
  "anyhow",
  "aranet-core",
  "aranet-types",
- "bluez-async",
  "btleplug",
  "clap",
  "clap_complete",
