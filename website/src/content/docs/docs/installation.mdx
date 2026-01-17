@@ -5,9 +5,17 @@ description: How to install the Aranet CLI and library from source.
 
 import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
+## Install from crates.io
+
+The easiest way to install the Aranet CLI:
+
+```bash
+cargo install aranet-cli
+```
+
 ## Build from Source
 
-The Aranet tools are currently distributed via source. Once published to crates.io, installation will be simpler.
+Alternatively, build from source for the latest development version:
 
 <Steps>
 1. **Clone the repository**
@@ -96,15 +104,8 @@ Add `aranet-core` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-aranet-core = { git = "https://github.com/cameronrye/aranet.git" }
+aranet-core = "0.1"
 ```
-
-<Aside>
-  Once published to crates.io, you'll be able to use:
-  ```toml
-  aranet-core = "0.1"
-  ```
-</Aside>
 
 ## Verify Installation
 

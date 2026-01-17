@@ -184,6 +184,9 @@ fn test_types_are_serializable() {
         radon: None,
         radiation_rate: None,
         radiation_total: None,
+        radon_avg_24h: None,
+        radon_avg_7d: None,
+        radon_avg_30d: None,
     };
 
     let json = serde_json::to_string(&reading).unwrap();

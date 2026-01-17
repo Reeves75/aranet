@@ -1,94 +1,22 @@
+//! Aranet CLI - Command-line interface for Aranet environmental sensors.
+
+mod cli;
+mod commands;
+mod config;
+mod format;
+mod util;
+
 use std::io;
-use std::path::PathBuf;
+use std::time::Duration;
 
 use anyhow::Result;
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{CommandFactory, Parser};
 use tracing_subscriber::EnvFilter;
 
-#[derive(Parser)]
-#[command(name = "aranet")]
-#[command(author, version, about = "CLI for Aranet environmental sensors", long_about = None)]
-struct Cli {
-    /// Enable verbose output
-    #[arg(short, long, global = true)]
-    verbose: bool,
-
-    /// Suppress non-essential output
-    #[arg(short, long, global = true)]
-    quiet: bool,
-
-    /// Write output to file instead of stdout
-    #[arg(short, long, global = true)]
-    output: Option<PathBuf>,
-
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Scan for nearby Aranet devices
-    Scan {
-        /// Scan timeout in seconds
-        #[arg(short, long, default_value = "10")]
-        timeout: u64,
-    },
-
-    /// Read current sensor values from a device
-    Read {
-        /// Device address (MAC address or UUID)
-        #[arg(short, long)]
-        device: Option<String>,
-
-        /// Output format (text, json)
-        #[arg(short, long, default_value = "text")]
-        format: String,
-    },
-
-    /// Retrieve historical data from a device
-    History {
-        /// Device address (MAC address or UUID)
-        #[arg(short, long)]
-        device: Option<String>,
-
-        /// Number of records to retrieve (0 for all)
-        #[arg(short, long, default_value = "0")]
-        count: u32,
-
-        /// Output format (text, json, csv)
-        #[arg(short, long, default_value = "text")]
-        format: String,
-    },
-
-    /// Display device information
-    Info {
-        /// Device address (MAC address or UUID)
-        #[arg(short, long)]
-        device: Option<String>,
-    },
-
-    /// Configure device settings
-    Set {
-        /// Device address (MAC address or UUID)
-        #[arg(short, long)]
-        device: Option<String>,
-
-        /// Setting name
-        #[arg(short, long)]
-        setting: String,
-
-        /// Setting value
-        #[arg(short, long)]
-        value: String,
-    },
-
-    /// Generate shell completions
-    Completions {
-        /// Shell to generate completions for
-        #[arg(value_enum)]
-        shell: clap_complete::Shell,
-    },
-}
+use cli::{Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
+use commands::{cmd_history, cmd_info, cmd_read, cmd_scan, cmd_set, cmd_status, cmd_watch};
+use config::{resolve_device, resolve_timeout, Config};
+use format::FormatOptions;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -97,86 +25,358 @@ async fn main() -> Result<()> {
     // Handle completions command early (before tracing init)
     if let Commands::Completions { shell } = cli.command {
         let mut cmd = Cli::command();
-        clap_complete::generate(shell, &mut cmd, "aranet", &mut io::stdout());
+        clap_complete::generate(shell, &mut cmd, env!("CARGO_BIN_NAME"), &mut io::stdout());
         return Ok(());
     }
 
-    // Initialize tracing
-    // When quiet mode is enabled, suppress info-level logging
+    // Handle config commands early
+    if let Commands::Config { ref action } = cli.command {
+        return handle_config_command(action);
+    }
+
+    // Load config for device resolution
+    let config = Config::load();
+
+    // Initialize tracing (write to stderr so stdout is clean for data)
     let filter = if cli.quiet {
         EnvFilter::new("warn")
     } else if cli.verbose {
         EnvFilter::new("debug")
     } else {
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"))
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn"))
     };
 
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr)
+        .init();
 
-    // Note: When output flag is set, file output would be written to cli.output
-    // For now, we just acknowledge where output would go
-    if let Some(ref path) = cli.output {
-        tracing::debug!("Output will be written to: {}", path.display());
-    }
+    let output = cli.output.as_ref();
+    let no_color = cli.no_color || config.no_color;
+    let quiet = cli.quiet;
+    let compact = cli.compact;
+    // Base fahrenheit from config (can be overridden per-command)
+    let config_fahrenheit = config.fahrenheit;
+    // Base bq from config (currently always false, but future-proofed)
+    let config_bq = false;
+    // Parse config format (used as fallback when command format is default)
+    let config_format = config.format.as_deref().and_then(parse_format);
 
     match cli.command {
-        Commands::Scan { timeout } => {
-            if !cli.quiet {
-                tracing::info!("Scanning for Aranet devices (timeout: {}s)...", timeout);
-            }
-            // TODO: When cli.output is Some, write to file instead of stdout
-            println!("Scan command not yet implemented");
+        Commands::Scan {
+            timeout,
+            format,
+            no_header,
+        } => {
+            let format = resolve_format_with_config(cli.json, format, config_format);
+            let timeout = resolve_timeout(timeout, &config, 10);
+            let opts = FormatOptions::new(no_color, config_fahrenheit)
+                .with_no_header(no_header)
+                .with_compact(compact);
+            cmd_scan(timeout, format, output, quiet, &opts).await?;
         }
-        Commands::Read { device, format } => {
-            let device_str = device.as_deref().unwrap_or("auto-detect");
-            if !cli.quiet {
-                tracing::info!("Reading from device: {} (format: {})", device_str, format);
-            }
-            // TODO: When cli.output is Some, write to file instead of stdout
-            println!("Read command not yet implemented");
+        Commands::Read { device, output: out } => {
+            let format = resolve_format_with_config(cli.json, out.format, config_format);
+            let dev = resolve_device(device.device, &config);
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
+                .with_no_header(out.no_header)
+                .with_compact(compact)
+                .with_bq(out.resolve_bq(config_bq));
+            cmd_read(dev, timeout, format, output, quiet, &opts).await?;
+        }
+        Commands::Status { device, output: out } => {
+            let format = resolve_format_with_config(cli.json, out.format, config_format);
+            let dev = resolve_device(device.device, &config);
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
+                .with_no_header(out.no_header)
+                .with_compact(compact)
+                .with_bq(out.resolve_bq(config_bq));
+            cmd_status(dev, timeout, format, output, &opts).await?;
         }
         Commands::History {
             device,
+            output: out,
             count,
-            format,
         } => {
-            let device_str = device.as_deref().unwrap_or("auto-detect");
-            if !cli.quiet {
-                tracing::info!(
-                    "Retrieving history from device: {} (count: {}, format: {})",
-                    device_str,
-                    count,
-                    format
-                );
-            }
-            // TODO: When cli.output is Some, write to file instead of stdout
-            println!("History command not yet implemented");
+            let format = resolve_format_with_config(cli.json, out.format, config_format);
+            let dev = resolve_device(device.device, &config);
+            // History uses a longer default timeout (60s)
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
+                .with_no_header(out.no_header)
+                .with_compact(compact)
+                .with_bq(out.resolve_bq(config_bq));
+            cmd_history(dev, count, timeout, format, output, quiet, &opts).await?;
         }
-        Commands::Info { device } => {
-            let device_str = device.as_deref().unwrap_or("auto-detect");
-            if !cli.quiet {
-                tracing::info!("Getting info for device: {}", device_str);
-            }
-            // TODO: When cli.output is Some, write to file instead of stdout
-            println!("Info command not yet implemented");
-        }
-        Commands::Set {
+        Commands::Info {
             device,
-            setting,
-            value,
+            format,
+            no_header,
         } => {
-            let device_str = device.as_deref().unwrap_or("auto-detect");
-            if !cli.quiet {
-                tracing::info!("Setting {} = {} on device: {}", setting, value, device_str);
-            }
-            // TODO: When cli.output is Some, write to file instead of stdout
-            println!("Set command not yet implemented");
+            let format = resolve_format_with_config(cli.json, format, config_format);
+            let dev = resolve_device(device.device, &config);
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            let opts = FormatOptions::new(no_color, config_fahrenheit)
+                .with_no_header(no_header)
+                .with_compact(compact);
+            cmd_info(dev, timeout, format, output, quiet, &opts).await?;
         }
-        Commands::Completions { .. } => {
-            // Already handled above
-            unreachable!()
+        Commands::Set { device, setting } => {
+            let dev = resolve_device(device.device, &config);
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            cmd_set(dev, timeout, setting, quiet).await?;
         }
+        Commands::Watch {
+            device,
+            output: out,
+            interval,
+            count,
+        } => {
+            let format = resolve_format_with_config(cli.json, out.format, config_format);
+            let dev = resolve_device(device.device, &config);
+            let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
+            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit))
+                .with_no_header(out.no_header)
+                .with_compact(compact)
+                .with_bq(out.resolve_bq(config_bq));
+            cmd_watch(dev, interval, count, timeout, format, output, &opts).await?;
+        }
+        Commands::Config { .. } => unreachable!(),
+        Commands::Completions { .. } => unreachable!(),
     }
 
     Ok(())
+}
+
+fn handle_config_command(action: &ConfigAction) -> Result<()> {
+    match action {
+        ConfigAction::Path => {
+            println!("{}", Config::path().display());
+        }
+        ConfigAction::Show => {
+            let config = Config::load();
+            println!("{}", toml::to_string_pretty(&config)?);
+        }
+        ConfigAction::Init => {
+            let path = Config::path();
+            if path.exists() {
+                eprintln!("Config file already exists: {}", path.display());
+            } else {
+                Config::default().save()?;
+                println!("Created config file: {}", path.display());
+            }
+        }
+        ConfigAction::Get { key } => {
+            let config = Config::load();
+            let value = match key {
+                ConfigKey::Device => config.device.unwrap_or_default(),
+                ConfigKey::Format => config.format.unwrap_or_else(|| "text".to_string()),
+                ConfigKey::Timeout => config.timeout.map(|t| t.to_string()).unwrap_or_default(),
+                ConfigKey::NoColor => config.no_color.to_string(),
+                ConfigKey::Fahrenheit => config.fahrenheit.to_string(),
+            };
+            println!("{}", value);
+        }
+        ConfigAction::Set { key, value } => {
+            let mut config = Config::load();
+            match key {
+                ConfigKey::Device => config.device = Some(value.clone()),
+                ConfigKey::Format => {
+                    // Validate format value
+                    match value.to_lowercase().as_str() {
+                        "text" | "json" | "csv" => config.format = Some(value.to_lowercase()),
+                        _ => anyhow::bail!(
+                            "Invalid format: {}. Valid values: text, json, csv",
+                            value
+                        ),
+                    }
+                }
+                ConfigKey::Timeout => {
+                    let seconds: u64 = value.parse().map_err(|_| {
+                        anyhow::anyhow!(
+                            "Invalid timeout value: {}. Must be a positive integer (seconds).",
+                            value
+                        )
+                    })?;
+                    config.timeout = Some(seconds);
+                }
+                ConfigKey::NoColor => {
+                    config.no_color = parse_bool(value).map_err(|_| {
+                        anyhow::anyhow!("Invalid no_color value: {}. Use 'true' or 'false'.", value)
+                    })?;
+                }
+                ConfigKey::Fahrenheit => {
+                    config.fahrenheit = parse_bool(value).map_err(|_| {
+                        anyhow::anyhow!(
+                            "Invalid fahrenheit value: {}. Use 'true' or 'false'.",
+                            value
+                        )
+                    })?;
+                }
+            }
+            config.save()?;
+            println!("Set {:?} = {}", key, value);
+        }
+        ConfigAction::Unset { key } => {
+            let mut config = Config::load();
+            match key {
+                ConfigKey::Device => config.device = None,
+                ConfigKey::Format => config.format = None,
+                ConfigKey::Timeout => config.timeout = None,
+                ConfigKey::NoColor => config.no_color = false,
+                ConfigKey::Fahrenheit => config.fahrenheit = false,
+            }
+            config.save()?;
+            println!("Unset {:?}", key);
+        }
+    }
+    Ok(())
+}
+
+/// Parse a boolean value from a string, supporting common representations.
+fn parse_bool(s: &str) -> std::result::Result<bool, ()> {
+    match s.to_lowercase().as_str() {
+        "true" | "yes" | "on" | "1" => Ok(true),
+        "false" | "no" | "off" | "0" => Ok(false),
+        _ => Err(()),
+    }
+}
+
+/// Parse an output format from a config string.
+fn parse_format(s: &str) -> Option<OutputFormat> {
+    match s.to_lowercase().as_str() {
+        "text" => Some(OutputFormat::Text),
+        "json" => Some(OutputFormat::Json),
+        "csv" => Some(OutputFormat::Csv),
+        _ => None,
+    }
+}
+
+/// Resolve output format with config fallback.
+/// Priority: --json flag > --format arg (if not default) > config format > default (text)
+fn resolve_format_with_config(
+    cli_json: bool,
+    cmd_format: OutputFormat,
+    config_format: Option<OutputFormat>,
+) -> OutputFormat {
+    if cli_json {
+        OutputFormat::Json
+    } else if !matches!(cmd_format, OutputFormat::Text) {
+        // Command explicitly specified a non-default format
+        cmd_format
+    } else {
+        // Use config format if available, otherwise default to text
+        config_format.unwrap_or(OutputFormat::Text)
+    }
+}
+
+// ============================================================================
+// CLI Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================================================
+    // resolve_format_with_config tests
+    // ========================================================================
+
+    #[test]
+    fn test_resolve_format_json_flag_overrides_text() {
+        let result = resolve_format_with_config(true, OutputFormat::Text, None);
+        assert!(matches!(result, OutputFormat::Json));
+    }
+
+    #[test]
+    fn test_resolve_format_json_flag_overrides_csv() {
+        let result = resolve_format_with_config(true, OutputFormat::Csv, None);
+        assert!(matches!(result, OutputFormat::Json));
+    }
+
+    #[test]
+    fn test_resolve_format_json_flag_overrides_config() {
+        let result = resolve_format_with_config(true, OutputFormat::Text, Some(OutputFormat::Csv));
+        assert!(matches!(result, OutputFormat::Json));
+    }
+
+    #[test]
+    fn test_resolve_format_explicit_csv_used() {
+        let result = resolve_format_with_config(false, OutputFormat::Csv, None);
+        assert!(matches!(result, OutputFormat::Csv));
+    }
+
+    #[test]
+    fn test_resolve_format_explicit_json_used() {
+        let result = resolve_format_with_config(false, OutputFormat::Json, None);
+        assert!(matches!(result, OutputFormat::Json));
+    }
+
+    #[test]
+    fn test_resolve_format_config_fallback() {
+        // When cmd format is default (Text) and no --json flag, use config
+        let result = resolve_format_with_config(false, OutputFormat::Text, Some(OutputFormat::Json));
+        assert!(matches!(result, OutputFormat::Json));
+    }
+
+    #[test]
+    fn test_resolve_format_default_text() {
+        // When no config and no explicit format, use Text
+        let result = resolve_format_with_config(false, OutputFormat::Text, None);
+        assert!(matches!(result, OutputFormat::Text));
+    }
+
+    // ========================================================================
+    // parse_bool tests
+    // ========================================================================
+
+    #[test]
+    fn test_parse_bool_true_variants() {
+        assert_eq!(parse_bool("true"), Ok(true));
+        assert_eq!(parse_bool("True"), Ok(true));
+        assert_eq!(parse_bool("TRUE"), Ok(true));
+        assert_eq!(parse_bool("yes"), Ok(true));
+        assert_eq!(parse_bool("on"), Ok(true));
+        assert_eq!(parse_bool("1"), Ok(true));
+    }
+
+    #[test]
+    fn test_parse_bool_false_variants() {
+        assert_eq!(parse_bool("false"), Ok(false));
+        assert_eq!(parse_bool("False"), Ok(false));
+        assert_eq!(parse_bool("FALSE"), Ok(false));
+        assert_eq!(parse_bool("no"), Ok(false));
+        assert_eq!(parse_bool("off"), Ok(false));
+        assert_eq!(parse_bool("0"), Ok(false));
+    }
+
+    #[test]
+    fn test_parse_bool_invalid() {
+        assert!(parse_bool("invalid").is_err());
+        assert!(parse_bool("maybe").is_err());
+        assert!(parse_bool("").is_err());
+    }
+
+    // ========================================================================
+    // parse_format tests
+    // ========================================================================
+
+    #[test]
+    fn test_parse_format_valid() {
+        assert!(matches!(parse_format("text"), Some(OutputFormat::Text)));
+        assert!(matches!(parse_format("Text"), Some(OutputFormat::Text)));
+        assert!(matches!(parse_format("json"), Some(OutputFormat::Json)));
+        assert!(matches!(parse_format("JSON"), Some(OutputFormat::Json)));
+        assert!(matches!(parse_format("csv"), Some(OutputFormat::Csv)));
+        assert!(matches!(parse_format("CSV"), Some(OutputFormat::Csv)));
+    }
+
+    #[test]
+    fn test_parse_format_invalid() {
+        assert!(parse_format("xml").is_none());
+        assert!(parse_format("").is_none());
+        assert!(parse_format("invalid").is_none());
+    }
 }

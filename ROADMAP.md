@@ -15,7 +15,7 @@ designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aran
 |-------|-----------|--------|----------|
 | 0 | Foundation | ✅ DONE | README, LICENSE, CI, CHANGELOG, aranet-types |
 | 1 | Core Library | ✅ DONE | Full BLE: scan, connect, read, history, settings - tested with real hardware |
-| 2 | CLI Tool | 🔶 WIP | Commands defined + shell completions; core integration pending |
+| 2 | CLI Tool | ✅ DONE | All core commands: scan, read, status, info, history, set, watch, config |
 | 3 | TUI Dashboard | 🔶 WIP | App shell + quit key; sensor integration pending |
 | 4 | GUI Application | 🔶 WIP | egui shell works; sensor integration pending |
 | 5 | WASM Module | 🔶 WIP | Basic init/log; Web Bluetooth pending |
@@ -30,22 +30,29 @@ designed for feature parity with [Aranet4-Python](https://github.com/Anrijs/Aran
 - **aranet-types**: Shared types for CurrentReading, DeviceInfo, HistoryRecord, Status, DeviceType, all UUIDs
 - **Multi-device support**: Aranet4, Aranet2, Aranet Radon, Aranet Radiation - all parsing implemented and tested
 - **AranetRn+ (Radon)**: Full support including current readings (radon, temp, pressure, humidity) and complete history download with 4-byte radon values
-- **CLI scaffolding**: All commands defined with clap v4, shell completions working
+- **CLI complete**: All commands working (scan, read, status, info, history, set, watch, config)
 - **Hardware tested**: Aranet4 17C3C (FW v1.4.19), AranetRn+ 306B8 (FW v1.12.0)
 
 ### Recent Improvements (Jan 2026)
 
-- Fixed UUID mappings for history characteristics
-- Fixed V2 history parsing (10-byte header format)
-- Added full AranetRn+ sensor support with radon history download
-- `HistoryRecord` now includes optional `radon: Option<u32>` field
-- All 179 workspace tests passing (168 run, 15 ignored - require BLE hardware)
+- **CLI Phase 2 complete**: All core commands fully implemented
+- `set` command for device settings (interval, range, smart_home)
+- `watch` command for continuous monitoring with auto-reconnect
+- `config` command for managing `~/.config/aranet/config.toml`
+- Config file support with device, format, no_color, fahrenheit options
+- Added `--json` global flag, `ARANET_DEVICE` env var, `--no-color` flag
+- Added `status` command for quick one-line output
+- Colored CO₂ status indicators (green/amber/red)
+- JSON and CSV output for all commands
+- All workspace tests passing
 
 ### Next Priority
 
-1. Wire CLI commands to aranet-core (scan, read, history, info work end-to-end)
-2. Add sensor data display to TUI/GUI shells
+1. Add sensor data display to TUI shell
+2. Add sensor data display to GUI shell
 3. Implement Web Bluetooth in WASM module
+4. Add `doctor` command for BLE diagnostics
+5. Add `--fahrenheit` / `--inhg` unit conversion
 
 ## Vision
 
@@ -158,20 +165,85 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 
 ### Milestone: Replace `aranetctl`
 
+#### Core Commands
+
 | Feature | Priority | Status |
 |---------|----------|--------|
-| `scan` - Discover devices | P0 | [~] Command defined |
-| `read` - Current measurements | P0 | [~] Command defined |
-| `history` - Download historical data | P0 | [~] Command defined |
-| `info` - Device information | P0 | [~] Command defined |
-| `export` - CSV/JSON export | P0 | [ ] |
-| `set` - Modify device settings | P1 | [~] Command defined |
+| `scan` - Discover devices | P0 | [x] Implemented |
+| `read` - Current measurements | P0 | [x] Implemented |
+| `history` - Download historical data | P0 | [x] Implemented |
+| `info` - Device information | P0 | [x] Implemented |
+| `status` - Quick one-line reading | P0 | [x] Implemented |
+| `set` - Modify device settings | P1 | [x] Implemented (interval, range, smart_home) |
+| `watch` - Continuous monitoring | P1 | [x] Implemented |
+| `config` - Manage configuration | P1 | [x] Implemented |
 | `completions` - Shell completions | P1 | [x] Implemented |
-| `watch` - Continuous monitoring | P1 | [ ] |
+| `doctor` - Diagnose BLE/permission issues | P2 | [ ] |
+| `alias` - Save friendly device names | P2 | [ ] |
+
+#### Global Flags & Configuration
+
+| Feature | Priority | Status |
+|---------|----------|--------|
 | `--quiet` flag | P1 | [x] Implemented |
-| `--output` flag (file output) | P1 | [~] Defined |
-| Multi-device support | P1 | [ ] |
-| Colored output with status indicators | P2 | [ ] |
+| `--output` flag (file output) | P1 | [x] Implemented |
+| `--json` global flag | P0 | [x] Implemented |
+| `--no-color` flag (+ `NO_COLOR` env) | P1 | [x] Implemented |
+| `--fahrenheit` / `--celsius` units | P1 | [ ] |
+| `--inhg` pressure unit (inches Hg) | P2 | [ ] |
+| `ARANET_DEVICE` env var | P0 | [x] Implemented |
+| Config file (`~/.config/aranet/config.toml`) | P1 | [x] Implemented |
+| Interactive device picker (when no device specified) | P1 | [ ] |
+
+#### Read Command Options
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| `--passive` (read from advertisements only) | P1 | [ ] |
+| `--format` (text, json, csv) | P1 | [x] Implemented |
+
+#### History Command Options
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| `--since` / `--until` date filters | P1 | [ ] |
+| `--format` (text, json, csv) | P1 | [x] Implemented |
+| `--count` limit records | P1 | [~] Defined, not wired |
+
+#### Output & Export
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| JSON output | P0 | [x] Implemented |
+| CSV export | P0 | [x] Implemented |
+| Colored output with CO₂ status indicators | P2 | [x] Implemented |
+| Progress bars for history download | P2 | [ ] |
+
+#### Multi-Device Support
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Read from multiple devices | P1 | [ ] |
+| Device aliases (friendly names) | P2 | [ ] |
+
+### Future CLI Enhancements (Post-v0.2.0)
+
+#### Integrations
+
+| Feature | Priority | Notes |
+|---------|----------|-------|
+| `--mqtt` / MQTT broker publishing | P2 | Home Assistant, etc. |
+| `--influx` InfluxDB line protocol | P2 | Time-series export |
+| `--prometheus` metrics endpoint | P2 | Metrics scraping |
+| `--webhook URL` POST readings | P2 | Custom integrations |
+
+#### Alerts & Notifications
+
+| Feature | Priority | Notes |
+|---------|----------|-------|
+| `alert` subcommand | P2 | Trigger on threshold breach |
+| `--threshold` on watch (exit code) | P2 | For cron/scripts |
+| System notifications (macOS/Linux) | P2 | Desktop alerts |
 
 ### CLI Dependencies (use latest versions)
 
@@ -184,6 +256,9 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 | `csv` | CSV export | [crates.io/crates/csv](https://crates.io/crates/csv) |
 | `owo-colors` | Terminal colors | [crates.io/crates/owo-colors](https://crates.io/crates/owo-colors) |
 | `indicatif` | Progress bars | [crates.io/crates/indicatif](https://crates.io/crates/indicatif) |
+| `dialoguer` | Interactive prompts | [crates.io/crates/dialoguer](https://crates.io/crates/dialoguer) |
+| `directories` | Config file paths | [crates.io/crates/directories](https://crates.io/crates/directories) |
+| `toml` | Config file parsing | [crates.io/crates/toml](https://crates.io/crates/toml) |
 
 ---
 
@@ -281,7 +356,7 @@ Manufacturer ID: 0x0702 (SAF Tehnika)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   Browser (Chrome)                   │
+│                   Browser (Chrome)                  │
 ├─────────────────────────────────────────────────────┤
 │  ┌─────────────┐    ┌─────────────────────────────┐ │
 │  │  Leptos/Yew │◄───│  aranet (WASM compiled)     │ │

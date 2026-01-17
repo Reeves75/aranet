@@ -41,6 +41,7 @@ impl DeviceType {
     /// assert_eq!(DeviceType::from_name("Aranet4 12345"), Some(DeviceType::Aranet4));
     /// assert_eq!(DeviceType::from_name("Aranet2 Home"), Some(DeviceType::Aranet2));
     /// assert_eq!(DeviceType::from_name("Aranet4"), Some(DeviceType::Aranet4));
+    /// assert_eq!(DeviceType::from_name("AranetRn+ 306B8"), Some(DeviceType::AranetRadon));
     /// assert_eq!(DeviceType::from_name("RN+ Radon"), Some(DeviceType::AranetRadon));
     /// assert_eq!(DeviceType::from_name("Aranet Radiation"), Some(DeviceType::AranetRadiation));
     /// assert_eq!(DeviceType::from_name("Unknown Device"), None);
@@ -59,8 +60,9 @@ impl DeviceType {
             return Some(DeviceType::Aranet2);
         }
 
-        // Check for Radon devices (RN+ or Radon keyword)
-        if Self::contains_word(&name_lower, "rn+")
+        // Check for Radon devices (AranetRn+, RN+, or Radon keyword)
+        if name_lower.contains("aranetrn+")
+            || Self::contains_word(&name_lower, "rn+")
             || Self::contains_word(&name_lower, "aranet radon")
             || (name_lower.starts_with("radon") || name_lower.contains(" radon"))
         {
@@ -280,6 +282,15 @@ pub struct CurrentReading {
     /// Total radiation dose in mSv (Aranet Radiation only).
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub radiation_total: Option<f64>,
+    /// 24-hour average radon concentration in Bq/m³ (`AranetRn+` only).
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub radon_avg_24h: Option<u32>,
+    /// 7-day average radon concentration in Bq/m³ (`AranetRn+` only).
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub radon_avg_7d: Option<u32>,
+    /// 30-day average radon concentration in Bq/m³ (`AranetRn+` only).
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub radon_avg_30d: Option<u32>,
 }
 
 impl Default for CurrentReading {
@@ -297,6 +308,9 @@ impl Default for CurrentReading {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         }
     }
 }
@@ -365,6 +379,9 @@ impl CurrentReading {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         })
     }
 
@@ -412,6 +429,9 @@ impl CurrentReading {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         })
     }
 
@@ -427,6 +447,19 @@ impl CurrentReading {
     /// - bytes 11-12: Humidity (u16 LE, divide by 10 for percent)
     /// - bytes 13-16: Radon (u32 LE, Bq/m³)
     /// - byte 17: Status (u8)
+    ///
+    /// Extended format (47 bytes) includes working averages:
+    /// - bytes 18-21: 24h average time (u32 LE)
+    /// - bytes 22-25: 24h average value (u32 LE, Bq/m³)
+    /// - bytes 26-29: 7d average time (u32 LE)
+    /// - bytes 30-33: 7d average value (u32 LE, Bq/m³)
+    /// - bytes 34-37: 30d average time (u32 LE)
+    /// - bytes 38-41: 30d average value (u32 LE, Bq/m³)
+    /// - bytes 42-45: Initial progress (u32 LE, optional)
+    /// - byte 46: Display type (u8, optional)
+    ///
+    /// Note: If an average value >= 0xff000000, it indicates the average
+    /// is still being calculated (in progress) and is not yet available.
     ///
     /// # Errors
     ///
@@ -462,6 +495,39 @@ impl CurrentReading {
             Status::Green
         };
 
+        // Parse optional working averages (extended format, 47 bytes)
+        // Each average is a pair: (time: u32, value: u32)
+        // If value >= 0xff000000, the average is still being calculated
+        let (radon_avg_24h, radon_avg_7d, radon_avg_30d) = if buf.remaining() >= 24 {
+            let _time_24h = buf.get_u32_le();
+            let avg_24h_raw = buf.get_u32_le();
+            let _time_7d = buf.get_u32_le();
+            let avg_7d_raw = buf.get_u32_le();
+            let _time_30d = buf.get_u32_le();
+            let avg_30d_raw = buf.get_u32_le();
+
+            // Values >= 0xff000000 indicate "in progress" (not yet available)
+            let avg_24h = if avg_24h_raw >= 0xff00_0000 {
+                None
+            } else {
+                Some(avg_24h_raw)
+            };
+            let avg_7d = if avg_7d_raw >= 0xff00_0000 {
+                None
+            } else {
+                Some(avg_7d_raw)
+            };
+            let avg_30d = if avg_30d_raw >= 0xff00_0000 {
+                None
+            } else {
+                Some(avg_30d_raw)
+            };
+
+            (avg_24h, avg_7d, avg_30d)
+        } else {
+            (None, None, None)
+        };
+
         Ok(CurrentReading {
             co2: 0,
             temperature: f32::from(temp_raw) / 20.0,
@@ -475,6 +541,9 @@ impl CurrentReading {
             radon: Some(radon),
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h,
+            radon_avg_7d,
+            radon_avg_30d,
         })
     }
 
@@ -541,6 +610,9 @@ impl CurrentReading {
             radon: None,
             radiation_rate: Some(dose_rate_usv),
             radiation_total: Some(total_dose_msv),
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         })
     }
 
@@ -657,6 +729,24 @@ impl CurrentReadingBuilder {
     /// Set total radiation dose (Aranet Radiation).
     pub fn radiation_total(mut self, total: f64) -> Self {
         self.reading.radiation_total = Some(total);
+        self
+    }
+
+    /// Set 24-hour average radon concentration (`AranetRn+`).
+    pub fn radon_avg_24h(mut self, avg: u32) -> Self {
+        self.reading.radon_avg_24h = Some(avg);
+        self
+    }
+
+    /// Set 7-day average radon concentration (`AranetRn+`).
+    pub fn radon_avg_7d(mut self, avg: u32) -> Self {
+        self.reading.radon_avg_7d = Some(avg);
+        self
+    }
+
+    /// Set 30-day average radon concentration (`AranetRn+`).
+    pub fn radon_avg_30d(mut self, avg: u32) -> Self {
+        self.reading.radon_avg_30d = Some(avg);
         self
     }
 

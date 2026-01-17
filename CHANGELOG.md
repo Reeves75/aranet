@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.1.2] - 2026-01-16
+
 ### Added
 
 - **Full AranetRn+ (Radon) sensor support**
@@ -21,10 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - History download (V1 notification-based, V2 read-based)
   - Device settings read/write (interval, Bluetooth range, Smart Home)
 - Multi-device support (Aranet4, Aranet2, AranetRn+, Aranet Radiation)
-- Project scaffolding with workspace structure
 - Core types (CurrentReading, DeviceInfo, HistoryRecord, Status, DeviceType)
 - BLE UUIDs for Aranet devices (both old and new firmware)
-- CLI scaffolding with scan, read, history, info, set commands
+- **CLI fully implemented** with all core commands:
+  - `scan` — Discover nearby Aranet devices
+  - `read` — Read current sensor measurements
+  - `status` — Quick one-line reading with colored CO₂ status
+  - `info` — Display device information
+  - `history` — Download historical data (text, JSON, CSV)
+  - `set` — Modify device settings (interval, range, smart_home)
+  - `watch` — Continuous monitoring with auto-reconnect
+  - `config` — Manage configuration file (`~/.config/aranet/config.toml`)
+  - `completions` — Generate shell completions (bash, zsh, fish, PowerShell)
 - TUI app shell with ratatui
 - GUI app shell with egui/eframe
 - WASM module scaffolding
@@ -34,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Connection metrics and operation tracking
 - Mock device for testing
 - Data validation and CO2 threshold helpers
+- JSON and CSV output formats for all CLI commands
+- Colored CO₂ status indicators (green/amber/red)
+- Config file support with device, format, no_color, fahrenheit options
+- `ARANET_DEVICE` environment variable support
+- `--no-color` flag and `NO_COLOR` env var support
 
 ### Fixed
 
@@ -45,5 +62,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated to Rust 1.90 minimum
+- Updated to Rust 1.90 minimum (edition 2024)
 - History download now uses correct parameter values for each sensor type

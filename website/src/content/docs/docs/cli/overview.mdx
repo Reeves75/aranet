@@ -49,6 +49,8 @@ aranet history --device <ADDRESS> --output data.csv
 | `-v, --verbose` | Enable verbose/debug output |
 | `-q, --quiet` | Suppress non-essential output |
 | `-o, --output <FILE>` | Write output to file instead of stdout |
+| `--json` | Output in JSON format (shorthand for `--format json`) |
+| `--no-color` | Disable colored output |
 | `-h, --help` | Show help information |
 | `--version` | Show version number |
 
@@ -76,7 +78,8 @@ aranet history --device <ADDRESS> --format csv
 | Variable | Description |
 |----------|-------------|
 | `ARANET_DEVICE` | Default device address |
-| `ARANET_LOG` | Log level (debug, info, warn, error) |
+| `RUST_LOG` | Log level (debug, info, warn, error) |
+| `NO_COLOR` | Disable colored output (any value) |
 
 ## Exit Codes
 

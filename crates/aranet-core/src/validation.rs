@@ -27,6 +27,9 @@
 //!     radon: None,
 //!     radiation_rate: None,
 //!     radiation_total: None,
+//!     radon_avg_24h: None,
+//!     radon_avg_7d: None,
+//!     radon_avg_30d: None,
 //! };
 //!
 //! let result = validator.validate(&reading);
@@ -653,6 +656,9 @@ mod tests {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         }
     }
 

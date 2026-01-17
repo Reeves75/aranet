@@ -26,8 +26,8 @@ This crate provides shared types that can be used by both native and WebAssembly
 |--------|-------------|
 | Aranet4 | CO₂, temperature, humidity, pressure |
 | Aranet2 | Temperature, humidity |
-| Aranet Radon | Temperature, humidity, pressure, radon |
-| Aranet Radiation | Temperature, humidity, radiation rate/total |
+| Aranet Radon | Temperature, humidity, pressure, radon, 24h/7d/30d averages |
+| Aranet Radiation | Radiation rate/total |
 
 ## Installation
 
@@ -72,6 +72,17 @@ let reading = CurrentReading::from_bytes_for_device(&data, DeviceType::Aranet2)?
 | Feature | Default | Description |
 |---------|---------|-------------|
 | `serde` | ✅ | Enables serialization/deserialization support |
+
+## Related Crates
+
+This crate is part of the [aranet](https://github.com/cameronrye/aranet) workspace:
+
+| Crate | crates.io | Description |
+|-------|-----------|-------------|
+| [aranet-core](../aranet-core/) | [![crates.io](https://img.shields.io/crates/v/aranet-core.svg)](https://crates.io/crates/aranet-core) | Core BLE library for device communication |
+| [aranet-cli](../aranet-cli/) | [![crates.io](https://img.shields.io/crates/v/aranet-cli.svg)](https://crates.io/crates/aranet-cli) | Command-line interface |
+| [aranet-tui](../aranet-tui/) | [![crates.io](https://img.shields.io/crates/v/aranet-tui.svg)](https://crates.io/crates/aranet-tui) | Terminal UI dashboard |
+| [aranet-gui](../aranet-gui/) | [![crates.io](https://img.shields.io/crates/v/aranet-gui.svg)](https://crates.io/crates/aranet-gui) | Desktop application (egui) |
 
 ## License
 

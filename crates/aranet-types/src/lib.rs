@@ -479,6 +479,9 @@ mod tests {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
         let reading2 = reading1.clone();
         assert_eq!(reading1, reading2);
@@ -567,6 +570,9 @@ mod tests {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         let json = serde_json::to_string(&reading).unwrap();
@@ -681,6 +687,16 @@ mod tests {
         // Should match case-insensitively
         assert_eq!(DeviceType::from_name("ARANET4"), Some(DeviceType::Aranet4));
         assert_eq!(DeviceType::from_name("aranet2"), Some(DeviceType::Aranet2));
+
+        // Should match AranetRn+ naming convention (real device name format)
+        assert_eq!(
+            DeviceType::from_name("AranetRn+ 306B8"),
+            Some(DeviceType::AranetRadon)
+        );
+        assert_eq!(
+            DeviceType::from_name("aranetrn+ 12345"),
+            Some(DeviceType::AranetRadon)
+        );
     }
 
     #[test]

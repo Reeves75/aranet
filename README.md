@@ -12,7 +12,7 @@
 Connect to your Aranet devices via Bluetooth LE to read measurements, download history, and monitor air quality.
 
 [![CI](https://github.com/cameronrye/aranet/workflows/CI/badge.svg)](https://github.com/cameronrye/aranet/actions)
-[![crates.io](https://img.shields.io/crates/v/aranet-core.svg)](https://crates.io/crates/aranet-core)
+[![crates.io](https://img.shields.io/crates/v/aranet-cli.svg)](https://crates.io/crates/aranet-cli)
 [![docs.rs](https://docs.rs/aranet-core/badge.svg)](https://docs.rs/aranet-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.90%2B-orange.svg)](https://www.rust-lang.org)
@@ -32,18 +32,27 @@ Connect to your Aranet devices via Bluetooth LE to read measurements, download h
 
 ## Installation
 
-> **Coming Soon** - Once published to crates.io:
+Install the CLI from [crates.io](https://crates.io/crates/aranet-cli):
 
 ```bash
 cargo install aranet-cli
 ```
 
-For now, build from source:
+Or build from source:
 
 ```bash
 git clone https://github.com/cameronrye/aranet.git
 cd aranet
 cargo build --release
+```
+
+### Using as a Library
+
+Add `aranet-core` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+aranet-core = "0.1"
 ```
 
 ## Quick Start
@@ -77,6 +86,7 @@ aranet info <DEVICE_ADDRESS>
 ```
 aranet/
 ├── crates/
+│   ├── aranet-types/    # Platform-agnostic types (shared)
 │   ├── aranet-core/     # Core BLE library
 │   ├── aranet-cli/      # CLI tool
 │   ├── aranet-tui/      # Terminal dashboard

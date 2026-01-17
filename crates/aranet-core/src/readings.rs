@@ -77,6 +77,9 @@ pub fn parse_aranet2_reading(data: &[u8]) -> Result<CurrentReading> {
         radon: None,
         radiation_rate: None,
         radiation_total: None,
+        radon_avg_24h: None,
+        radon_avg_7d: None,
+        radon_avg_30d: None,
     })
 }
 
@@ -119,6 +122,9 @@ pub fn parse_aranet_radon_reading(data: &[u8]) -> Result<ExtendedReading> {
         radon: Some(radon),
         radiation_rate: None,
         radiation_total: None,
+        radon_avg_24h: None,
+        radon_avg_7d: None,
+        radon_avg_30d: None,
     };
 
     Ok(ExtendedReading {
@@ -139,7 +145,15 @@ pub fn parse_aranet_radon_reading(data: &[u8]) -> Result<ExtendedReading> {
 /// - Bytes 11-12: Humidity (LE16, raw / 10 = %)
 /// - Bytes 13-16: Radon concentration (LE32, Bq/m³)
 /// - Byte 17: Status/color
-/// - Remaining: Averages (24h, 7d, 30d)
+/// - Bytes 18-21: 24h average time (LE32)
+/// - Bytes 22-25: 24h average value (LE32, Bq/m³)
+/// - Bytes 26-29: 7d average time (LE32)
+/// - Bytes 30-33: 7d average value (LE32, Bq/m³)
+/// - Bytes 34-37: 30d average time (LE32)
+/// - Bytes 38-41: 30d average value (LE32, Bq/m³)
+///
+/// Note: If an average value >= 0xff000000, it indicates the average
+/// is still being calculated (in progress) and is not yet available.
 pub fn parse_aranet_radon_gatt(data: &[u8]) -> Result<CurrentReading> {
     if data.len() < 18 {
         return Err(Error::InvalidData(format!(
@@ -167,6 +181,39 @@ pub fn parse_aranet_radon_gatt(data: &[u8]) -> Result<CurrentReading> {
         Status::Green
     };
 
+    // Parse optional working averages (extended format, 47 bytes)
+    // Each average is a pair: (time: u32, value: u32)
+    // If value >= 0xff000000, the average is still being calculated
+    let (radon_avg_24h, radon_avg_7d, radon_avg_30d) = if buf.remaining() >= 24 {
+        let _time_24h = buf.get_u32_le();
+        let avg_24h_raw = buf.get_u32_le();
+        let _time_7d = buf.get_u32_le();
+        let avg_7d_raw = buf.get_u32_le();
+        let _time_30d = buf.get_u32_le();
+        let avg_30d_raw = buf.get_u32_le();
+
+        // Values >= 0xff000000 indicate "in progress" (not yet available)
+        let avg_24h = if avg_24h_raw >= 0xff00_0000 {
+            None
+        } else {
+            Some(avg_24h_raw)
+        };
+        let avg_7d = if avg_7d_raw >= 0xff00_0000 {
+            None
+        } else {
+            Some(avg_7d_raw)
+        };
+        let avg_30d = if avg_30d_raw >= 0xff00_0000 {
+            None
+        } else {
+            Some(avg_30d_raw)
+        };
+
+        (avg_24h, avg_7d, avg_30d)
+    } else {
+        (None, None, None)
+    };
+
     Ok(CurrentReading {
         co2: 0,
         temperature: temp_raw as f32 / 20.0,
@@ -180,6 +227,9 @@ pub fn parse_aranet_radon_gatt(data: &[u8]) -> Result<CurrentReading> {
         radon: Some(radon),
         radiation_rate: None,
         radiation_total: None,
+        radon_avg_24h,
+        radon_avg_7d,
+        radon_avg_30d,
     })
 }
 
@@ -241,6 +291,9 @@ pub fn parse_aranet_radiation_gatt(data: &[u8]) -> Result<ExtendedReading> {
         radon: None,
         radiation_rate: Some(dose_rate_usv),
         radiation_total: Some(total_dose_msv),
+        radon_avg_24h: None,
+        radon_avg_7d: None,
+        radon_avg_30d: None,
     };
 
     Ok(ExtendedReading {
@@ -621,6 +674,9 @@ mod tests {
             radon: Some(150),
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         let extended = ExtendedReading {
@@ -648,6 +704,9 @@ mod tests {
             radon: None,
             radiation_rate: Some(0.15),
             radiation_total: Some(0.001),
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         let extended = ExtendedReading {
@@ -675,6 +734,9 @@ mod tests {
             radon: Some(100),
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         let extended = ExtendedReading {
@@ -702,6 +764,9 @@ mod tests {
             radon: Some(100),
             radiation_rate: Some(0.1),
             radiation_total: Some(0.001),
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         let extended = ExtendedReading {

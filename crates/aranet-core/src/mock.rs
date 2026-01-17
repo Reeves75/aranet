@@ -122,6 +122,9 @@ impl MockDevice {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         }
     }
 
@@ -626,6 +629,9 @@ impl MockDeviceBuilder {
             radon: None,
             radiation_rate: None,
             radiation_total: None,
+            radon_avg_24h: None,
+            radon_avg_7d: None,
+            radon_avg_30d: None,
         };
 
         MockDevice {

@@ -137,7 +137,7 @@ Status flags: `bits[0:1]` = humidity status, `bits[2:3]` = temperature status
 
 ### Aranet Radon Current Readings (GATT)
 
-18 bytes minimum (extended format includes averages):
+18 bytes minimum (extended format with averages is 42 bytes):
 
 | Offset | Name | Type | Transform |
 |--------|------|------|-----------|
@@ -150,7 +150,14 @@ Status flags: `bits[0:1]` = humidity status, `bits[2:3]` = temperature status
 | 11-12 | Humidity | u16LE | ÷ 10.0 → % |
 | 13-16 | Radon (Bq/m³) | u32LE | none |
 | 17 | Status | u8 | See Color enum |
-| 18+ | Averages | u64LE × 3 | 24h, 7d, 30d (optional) |
+| 18-21 | 24h Avg Time | u32LE | seconds since epoch |
+| 22-25 | 24h Avg Value | u32LE | Bq/m³ (≥0xff000000 = in progress) |
+| 26-29 | 7d Avg Time | u32LE | seconds since epoch |
+| 30-33 | 7d Avg Value | u32LE | Bq/m³ (≥0xff000000 = in progress) |
+| 34-37 | 30d Avg Time | u32LE | seconds since epoch |
+| 38-41 | 30d Avg Value | u32LE | Bq/m³ (≥0xff000000 = in progress) |
+
+**Note:** If an average value is ≥ 0xff000000, it indicates the average is still being calculated and is not yet available.
 
 ---
 

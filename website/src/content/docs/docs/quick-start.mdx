@@ -88,8 +88,8 @@ The CSV file contains timestamped sensor readings:
 
 ```csv
 timestamp,co2,temperature,humidity,pressure
-2025-01-16T10:00:00Z,847,22.4,45,1013.2
-2025-01-16T10:05:00Z,823,22.5,44,1013.1
+2026-01-16T10:00:00Z,847,22.4,45,1013.2
+2026-01-16T10:05:00Z,823,22.5,44,1013.1
 ...
 ```
 
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Humidity: {}%", reading.humidity);
 
     // Download history
-    let history = device.read_history().await?;
+    let history = device.download_history().await?;
     println!("Downloaded {} records", history.len());
 
     Ok(())

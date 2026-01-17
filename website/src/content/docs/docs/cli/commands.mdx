@@ -139,6 +139,30 @@ Manufacturer: SAF Tehnika
 
 ---
 
+## status
+
+Quick one-line reading with colored CO₂ status indicator.
+
+```bash
+aranet status [OPTIONS]
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-d, --device <ADDRESS>` | auto-detect | Device address (MAC or UUID) |
+
+### Example
+
+```bash
+$ aranet status --device AA:BB:CC:DD:EE:FF
+
+Aranet4 17C3C: 847 ppm [GREEN] 22.4°C 45% 1013 hPa
+```
+
+---
+
 ## set
 
 Modify device settings.
@@ -153,6 +177,7 @@ aranet set [OPTIONS] <SETTING> <VALUE>
 |---------|--------|-------------|
 | `interval` | `1`, `2`, `5`, `10` | Measurement interval in minutes |
 | `range` | `standard`, `extended` | Bluetooth range |
+| `smart_home` | `on`, `off` | Smart Home integration |
 
 ### Example
 
@@ -162,11 +187,99 @@ aranet set --device AA:BB:CC:DD:EE:FF interval 2
 
 # Enable extended Bluetooth range
 aranet set --device AA:BB:CC:DD:EE:FF range extended
+
+# Enable Smart Home integration
+aranet set --device AA:BB:CC:DD:EE:FF smart_home on
 ```
 
 <Aside type="caution">
   Changing the measurement interval affects battery life. Shorter intervals use more power.
 </Aside>
+
+---
+
+## watch
+
+Continuously monitor sensor readings with auto-reconnect.
+
+```bash
+aranet watch [OPTIONS]
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-d, --device <ADDRESS>` | auto-detect | Device address (MAC or UUID) |
+| `-i, --interval <SECONDS>` | device interval | Polling interval in seconds |
+
+### Example
+
+```bash
+$ aranet watch --device AA:BB:CC:DD:EE:FF
+
+Watching Aranet4 17C3C (Ctrl+C to stop)...
+
+[10:00:00] CO₂: 847 ppm [GREEN] 22.4°C 45% 1013 hPa
+[10:05:00] CO₂: 823 ppm [GREEN] 22.5°C 44% 1013 hPa
+[10:10:00] CO₂: 891 ppm [GREEN] 22.3°C 45% 1012 hPa
+```
+
+---
+
+## config
+
+Manage the configuration file (`~/.config/aranet/config.toml`).
+
+```bash
+aranet config <SUBCOMMAND>
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `show` | Display current configuration |
+| `get <KEY>` | Get a configuration value |
+| `set <KEY> <VALUE>` | Set a configuration value |
+| `unset <KEY>` | Remove a configuration value |
+| `path` | Print the config file path |
+| `init` | Initialize default configuration |
+
+### Example
+
+```bash
+# Show current configuration
+$ aranet config show
+
+device = "AA:BB:CC:DD:EE:FF"
+format = "text"
+no_color = false
+fahrenheit = false
+
+# Print config file path
+$ aranet config path
+
+/Users/you/.config/aranet/config.toml
+```
+
+### Configuration Options
+
+```toml
+# ~/.config/aranet/config.toml
+
+# Default device address
+device = "AA:BB:CC:DD:EE:FF"
+
+# Default output format: text, json, csv
+format = "text"
+
+# Disable colored output
+no_color = false
+
+# Use Fahrenheit for temperature
+fahrenheit = false
+```
 
 ---
 
