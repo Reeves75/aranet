@@ -64,7 +64,8 @@ async fn cmd_read_single(
     // Use connect_device_with_progress which has its own spinner
     // Don't create a separate spinner here to avoid duplication
     let show_progress = !quiet && matches!(format, OutputFormat::Text);
-    let device = crate::util::connect_device_with_progress(identifier, timeout, show_progress).await?;
+    let device =
+        crate::util::connect_device_with_progress(identifier, timeout, show_progress).await?;
     let device_name = device.name().map(|s| s.to_string());
     let reading = device
         .read_current()

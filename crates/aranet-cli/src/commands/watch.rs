@@ -282,13 +282,11 @@ async fn cmd_watch_passive(
                                     let display_name = device_name.unwrap_or(&discovered.address);
 
                                     let content = match format {
-                                        OutputFormat::Json => {
-                                            format_reading_json_with_device(
-                                                &reading,
-                                                display_name,
-                                                opts,
-                                            )?
-                                        }
+                                        OutputFormat::Json => format_reading_json_with_device(
+                                            &reading,
+                                            display_name,
+                                            opts,
+                                        )?,
                                         OutputFormat::Csv => {
                                             let mut out = String::new();
                                             if !header_written {
@@ -304,9 +302,11 @@ async fn cmd_watch_passive(
                                             ));
                                             out
                                         }
-                                        OutputFormat::Text => {
-                                            format_watch_line_with_device(&reading, display_name, opts)
-                                        }
+                                        OutputFormat::Text => format_watch_line_with_device(
+                                            &reading,
+                                            display_name,
+                                            opts,
+                                        ),
                                     };
                                     write_output(output, &content)?;
                                 }

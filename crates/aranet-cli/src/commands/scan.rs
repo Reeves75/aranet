@@ -9,7 +9,9 @@ use aranet_core::{ScanOptions, scan};
 
 use crate::cli::OutputFormat;
 use crate::config::Config;
-use crate::format::{FormatOptions, format_scan_csv, format_scan_json, format_scan_text_with_aliases};
+use crate::format::{
+    FormatOptions, format_scan_csv, format_scan_json, format_scan_text_with_aliases,
+};
 use crate::style;
 use crate::util::write_output;
 

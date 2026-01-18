@@ -365,7 +365,9 @@ pub fn format_scan_text_with_aliases(
                         .map(|t| format!("{:?}", t))
                         .unwrap_or_else(|| "Unknown".to_string()),
                     signal: if use_plain_signal {
-                        d.rssi.map(|r| r.to_string()).unwrap_or_else(|| "N/A".to_string())
+                        d.rssi
+                            .map(|r| r.to_string())
+                            .unwrap_or_else(|| "N/A".to_string())
                     } else {
                         style::format_signal_bar(d.rssi, opts.no_color)
                     },
@@ -410,7 +412,9 @@ pub fn format_scan_text_with_aliases(
                         .map(|t| format!("{:?}", t))
                         .unwrap_or_else(|| "Unknown".to_string()),
                     signal: if use_plain_signal {
-                        d.rssi.map(|r| r.to_string()).unwrap_or_else(|| "N/A".to_string())
+                        d.rssi
+                            .map(|r| r.to_string())
+                            .unwrap_or_else(|| "N/A".to_string())
                     } else {
                         style::format_signal_bar(d.rssi, opts.no_color)
                     },
@@ -654,7 +658,10 @@ fn format_reading_rich(
         };
         let unit = if opts.bq { "Bq/m3" } else { "pCi/L" };
         let status = format_status(reading.status, opts.no_color);
-        output.push_str(&kv("Radon", &format!("{} {} {}", radon_display, unit, status)));
+        output.push_str(&kv(
+            "Radon",
+            &format!("{} {} {}", radon_display, unit, status),
+        ));
 
         // Radon averages
         if let Some(avg_24h) = reading.radon_avg_24h {
@@ -1335,10 +1342,8 @@ pub fn format_watch_line_with_device(
 
     // Temperature (if available - radiation devices don't have it)
     if reading.temperature != 0.0 {
-        let temp_display = style::format_temp_colored(
-            opts.convert_temp(reading.temperature),
-            opts.no_color,
-        );
+        let temp_display =
+            style::format_temp_colored(opts.convert_temp(reading.temperature), opts.no_color);
         let unit = if opts.fahrenheit { "F" } else { "C" };
         parts.push(format!("{}{}", temp_display, unit));
     }

@@ -434,8 +434,6 @@ pub fn terminal_width() -> usize {
         .unwrap_or(80)
 }
 
-
-
 /// Format a status badge (Rich mode)
 #[allow(dead_code)]
 pub fn format_status_badge(

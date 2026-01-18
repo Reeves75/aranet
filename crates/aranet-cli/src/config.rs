@@ -129,7 +129,10 @@ pub fn update_last_device(identifier: &str, name: Option<&str>) -> Result<()> {
 /// - None if device was explicitly provided
 /// - Some("default") if using default device
 /// - Some("last") if using last connected device
-pub fn get_device_source(device: Option<&str>, config: &Config) -> (Option<String>, Option<&'static str>) {
+pub fn get_device_source(
+    device: Option<&str>,
+    config: &Config,
+) -> (Option<String>, Option<&'static str>) {
     if let Some(d) = device {
         (Some(resolve_alias(d, config)), None)
     } else if let Some(d) = &config.device {

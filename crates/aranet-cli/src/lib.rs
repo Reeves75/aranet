@@ -90,4 +90,3 @@ pub use aranet_types;
 // TUI module - publicly exposed for aranet-tui crate to use
 #[cfg(feature = "tui")]
 pub mod tui;
-

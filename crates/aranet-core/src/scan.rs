@@ -388,8 +388,7 @@ pub async fn find_device_with_progress(
         adapter.stop_scan().await?;
 
         // Check if we found the device
-        if let Some(peripheral) =
-            find_peripheral_by_identifier(&adapter, &identifier_lower).await?
+        if let Some(peripheral) = find_peripheral_by_identifier(&adapter, &identifier_lower).await?
         {
             info!("Found device on attempt {}", attempt);
             if let Some(ref cb) = progress {

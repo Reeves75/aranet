@@ -31,13 +31,7 @@ mod tui;
 use anyhow::Result;
 
 #[cfg(feature = "cli")]
-use std::io;
-#[cfg(feature = "cli")]
-use std::time::Duration;
-#[cfg(feature = "cli")]
 use clap::{CommandFactory, Parser};
-#[cfg(feature = "cli")]
-use tracing_subscriber::EnvFilter;
 #[cfg(feature = "cli")]
 use cli::{AliasSubcommand, Cli, Commands, ConfigAction, ConfigKey, OutputFormat};
 #[cfg(feature = "cli")]
@@ -49,6 +43,12 @@ use commands::{
 use config::{Config, get_device_source, resolve_devices, resolve_timeout};
 #[cfg(feature = "cli")]
 use format::FormatOptions;
+#[cfg(feature = "cli")]
+use std::io;
+#[cfg(feature = "cli")]
+use std::time::Duration;
+#[cfg(feature = "cli")]
+use tracing_subscriber::EnvFilter;
 
 // =============================================================================
 // Main Entry Point
@@ -155,11 +155,12 @@ async fn main() -> Result<()> {
                 resolve_devices(device.device, &config)
             };
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
-            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
-                .with_no_header(out.no_header)
-                .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq))
-                .with_inhg(out.resolve_inhg(config_inhg));
+            let opts =
+                FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
+                    .with_no_header(out.no_header)
+                    .with_compact(compact)
+                    .with_bq(out.resolve_bq(config_bq))
+                    .with_inhg(out.resolve_inhg(config_inhg));
             cmd_read(devices, timeout, format, output, quiet, passive, &opts).await?;
         }
         Commands::Status {
@@ -170,11 +171,12 @@ async fn main() -> Result<()> {
             let format = resolve_format_with_config(cli.json, out.format, config_format);
             let dev = resolve_device_with_hint(device.device, &config, quiet);
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
-            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
-                .with_no_header(out.no_header)
-                .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq))
-                .with_inhg(out.resolve_inhg(config_inhg));
+            let opts =
+                FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
+                    .with_no_header(out.no_header)
+                    .with_compact(compact)
+                    .with_bq(out.resolve_bq(config_bq))
+                    .with_inhg(out.resolve_inhg(config_inhg));
             cmd_status(dev, timeout, format, output, &opts, brief).await?;
         }
         Commands::History {
@@ -188,11 +190,12 @@ async fn main() -> Result<()> {
             let dev = resolve_device_with_hint(device.device, &config, quiet);
             // History uses a longer default timeout (60s)
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
-            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
-                .with_no_header(out.no_header)
-                .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq))
-                .with_inhg(out.resolve_inhg(config_inhg));
+            let opts =
+                FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
+                    .with_no_header(out.no_header)
+                    .with_compact(compact)
+                    .with_bq(out.resolve_bq(config_bq))
+                    .with_inhg(out.resolve_inhg(config_inhg));
             cmd_history(HistoryArgs {
                 device: dev,
                 count,
@@ -240,11 +243,12 @@ async fn main() -> Result<()> {
                 resolve_device_with_hint(device.device, &config, quiet)
             };
             let timeout = Duration::from_secs(resolve_timeout(device.timeout, &config, 30));
-            let opts = FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
-                .with_no_header(out.no_header)
-                .with_compact(compact)
-                .with_bq(out.resolve_bq(config_bq))
-                .with_inhg(out.resolve_inhg(config_inhg));
+            let opts =
+                FormatOptions::new(no_color, out.resolve_fahrenheit(config_fahrenheit), style)
+                    .with_no_header(out.no_header)
+                    .with_compact(compact)
+                    .with_bq(out.resolve_bq(config_bq))
+                    .with_inhg(out.resolve_inhg(config_inhg));
             cmd_watch(WatchArgs {
                 device: dev,
                 interval,
