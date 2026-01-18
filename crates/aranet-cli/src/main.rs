@@ -424,26 +424,25 @@ fn resolve_device_with_hint(
     let (resolved, source) = get_device_source(device.as_deref(), config);
 
     // Show hint about device source (unless quiet mode)
-    if !quiet {
-        if let Some(source) = source {
-            if let Some(ref dev) = resolved {
-                let name = config
-                    .last_device_name
-                    .as_deref()
-                    .filter(|_| source == "last");
-                match (source, name) {
-                    ("last", Some(name)) => {
-                        eprintln!("Using last connected device: {} ({})", name, dev);
-                    }
-                    ("last", None) => {
-                        eprintln!("Using last connected device: {}", dev);
-                    }
-                    ("default", _) => {
-                        // Don't show message for default device - user explicitly configured it
-                    }
-                    _ => {}
-                }
+    if !quiet
+        && let Some(source) = source
+        && let Some(ref dev) = resolved
+    {
+        let name = config
+            .last_device_name
+            .as_deref()
+            .filter(|_| source == "last");
+        match (source, name) {
+            ("last", Some(name)) => {
+                eprintln!("Using last connected device: {} ({})", name, dev);
             }
+            ("last", None) => {
+                eprintln!("Using last connected device: {}", dev);
+            }
+            ("default", _) => {
+                // Don't show message for default device - user explicitly configured it
+            }
+            _ => {}
         }
     }
 

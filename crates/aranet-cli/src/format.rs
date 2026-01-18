@@ -306,7 +306,7 @@ pub fn format_scan_text_with_aliases(
     let use_plain_signal = opts.is_plain();
 
     // Check if any device has an alias
-    let has_aliases = aliases.map_or(false, |a| {
+    let has_aliases = aliases.is_some_and(|a| {
         devices.iter().any(|d| {
             let id_lower = d.identifier.to_lowercase();
             a.values().any(|v| v.to_lowercase() == id_lower)
