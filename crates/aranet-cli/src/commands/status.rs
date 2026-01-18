@@ -81,7 +81,13 @@ fn format_status_text(
         let humidity_display = style::format_humidity_colored(reading.humidity, opts.no_color);
         format!(
             "{}: {} {} {} {} {} {:.1}hPa\n",
-            name_display, radon_display, opts.radon_display_unit(), status_str, temp, humidity_display, reading.pressure
+            name_display,
+            radon_display,
+            opts.radon_display_unit(),
+            status_str,
+            temp,
+            humidity_display,
+            reading.pressure
         )
     } else if let Some(rate) = reading.radiation_rate {
         // Aranet Radiation

@@ -232,12 +232,18 @@ async fn check_permissions() -> Check {
     #[cfg(target_os = "windows")]
     {
         // On Windows, Bluetooth permissions are typically granted by default
-        Check::pass("Bluetooth Permissions", "Windows grants Bluetooth access by default")
+        Check::pass(
+            "Bluetooth Permissions",
+            "Windows grants Bluetooth access by default",
+        )
     }
 
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     {
-        Check::warn("Bluetooth Permissions", "Unknown platform - cannot check permissions")
+        Check::warn(
+            "Bluetooth Permissions",
+            "Unknown platform - cannot check permissions",
+        )
     }
 }
 

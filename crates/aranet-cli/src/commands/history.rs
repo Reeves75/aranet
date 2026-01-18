@@ -29,7 +29,10 @@ fn parse_datetime(s: &str) -> Result<OffsetDateTime> {
         }
         "yesterday" => {
             let yesterday = now.date() - time::Duration::days(1);
-            return Ok(yesterday.with_hms(0, 0, 0).expect("valid time").assume_utc());
+            return Ok(yesterday
+                .with_hms(0, 0, 0)
+                .expect("valid time")
+                .assume_utc());
         }
         _ => {}
     }
@@ -66,11 +69,7 @@ fn parse_relative_duration(s: &str) -> Option<time::Duration> {
     }
 
     // Find where the number ends and the unit begins
-    let (num_str, unit) = s.split_at(
-        s.chars()
-            .take_while(|c| c.is_ascii_digit())
-            .count(),
-    );
+    let (num_str, unit) = s.split_at(s.chars().take_while(|c| c.is_ascii_digit()).count());
 
     let num: i64 = num_str.parse().ok()?;
     if num <= 0 {

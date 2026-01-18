@@ -407,7 +407,12 @@ fn format_watch_line_with_trend(
         };
         format!(
             "[{}] {} {} | {} | {} | {}\n",
-            timestamp, radon_display, opts.radon_display_unit(), temp_display, humidity_display, battery_display
+            timestamp,
+            radon_display,
+            opts.radon_display_unit(),
+            temp_display,
+            humidity_display,
+            battery_display
         )
     } else if let Some(rate) = reading.radiation_rate {
         // Aranet Radiation
