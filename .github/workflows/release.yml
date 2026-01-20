@@ -150,21 +150,36 @@ jobs:
             exit 0
           fi
 
-          # Find the binary
-          BINARY_PATH=$(find target/distrib -name "aranet" -type f | head -1)
-          if [ -z "$BINARY_PATH" ]; then
-            echo "Binary not found in target/distrib"
-            ls -la target/distrib/
+          echo "Contents of target/distrib:"
+          ls -la target/distrib/
+
+          # Find the tarball (cargo-dist uses .tar.xz format)
+          TARBALL=$(find target/distrib -name "aranet-cli-*.tar.xz" | head -1)
+          if [ -z "$TARBALL" ]; then
+            echo "No aranet-cli tarball found, checking for any tarball..."
+            TARBALL=$(find target/distrib -name "*.tar.xz" | head -1)
+          fi
+
+          if [ -z "$TARBALL" ]; then
+            echo "No tarball found in target/distrib"
             exit 1
           fi
 
-          # Extract from tarball if needed
-          TARBALL=$(find target/distrib -name "*.tar.gz" | head -1)
-          if [ -n "$TARBALL" ]; then
-            EXTRACT_DIR=$RUNNER_TEMP/extract
-            mkdir -p "$EXTRACT_DIR"
-            tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
-            BINARY_PATH=$(find "$EXTRACT_DIR" -name "aranet" -type f | head -1)
+          echo "Found tarball: $TARBALL"
+
+          # Extract the tarball
+          EXTRACT_DIR=$RUNNER_TEMP/extract
+          mkdir -p "$EXTRACT_DIR"
+          tar -xJf "$TARBALL" -C "$EXTRACT_DIR"
+
+          echo "Extracted contents:"
+          find "$EXTRACT_DIR" -type f
+
+          # Find the binary
+          BINARY_PATH=$(find "$EXTRACT_DIR" -name "aranet" -type f | head -1)
+          if [ -z "$BINARY_PATH" ]; then
+            echo "Binary 'aranet' not found in extracted tarball"
+            exit 1
           fi
 
           echo "Signing binary at: $BINARY_PATH"
@@ -176,13 +191,11 @@ jobs:
           # Verify signature
           codesign -dv --verbose=4 "$BINARY_PATH"
 
-          # Re-package if extracted from tarball
-          if [ -n "$TARBALL" ]; then
-            TARBALL_NAME=$(basename "$TARBALL")
-            rm "$TARBALL"
-            tar -czf "target/distrib/$TARBALL_NAME" -C "$EXTRACT_DIR" .
-            echo "Re-packaged signed binary into $TARBALL_NAME"
-          fi
+          # Re-package the signed binary
+          TARBALL_NAME=$(basename "$TARBALL")
+          rm "$TARBALL"
+          tar -cJf "target/distrib/$TARBALL_NAME" -C "$EXTRACT_DIR" .
+          echo "Re-packaged signed binary into $TARBALL_NAME"
 
       - name: Notarize macOS binary
         if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/')
@@ -197,8 +210,11 @@ jobs:
             exit 0
           fi
 
-          # Find the tarball to notarize
-          TARBALL=$(find target/distrib -name "*.tar.gz" | head -1)
+          # Find the tarball to notarize (cargo-dist uses .tar.xz)
+          TARBALL=$(find target/distrib -name "aranet-cli-*.tar.xz" | head -1)
+          if [ -z "$TARBALL" ]; then
+            TARBALL=$(find target/distrib -name "*.tar.xz" | head -1)
+          fi
           if [ -z "$TARBALL" ]; then
             echo "No tarball found to notarize"
             exit 0
@@ -207,8 +223,13 @@ jobs:
           # Create a zip for notarization (Apple requires zip format)
           EXTRACT_DIR=$RUNNER_TEMP/notarize
           mkdir -p "$EXTRACT_DIR"
-          tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
+          tar -xJf "$TARBALL" -C "$EXTRACT_DIR"
           BINARY_PATH=$(find "$EXTRACT_DIR" -name "aranet" -type f | head -1)
+
+          if [ -z "$BINARY_PATH" ]; then
+            echo "Binary not found for notarization"
+            exit 1
+          fi
 
           ZIP_PATH=$RUNNER_TEMP/aranet-notarize.zip
           ditto -c -k --keepParent "$BINARY_PATH" "$ZIP_PATH"
