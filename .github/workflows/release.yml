@@ -289,15 +289,16 @@ jobs:
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
 
-          # List all files to upload (exclude directories)
+          # List only top-level files in target/distrib (not files inside subdirectories)
+          # These are the actual release artifacts (.tar.xz, .sha256, installer scripts, etc.)
           echo "Files to upload:"
-          find target/distrib -type f | head -20
+          find target/distrib -maxdepth 1 -type f | head -20
 
-          # Create the release with only files (not directories)
+          # Create the release with only top-level files (not extracted contents in subdirectories)
           gh release create "${{ github.ref_name }}" \
             --title "Aranet CLI ${{ github.ref_name }}" \
             --generate-notes \
-            $(find target/distrib -type f)
+            $(find target/distrib -maxdepth 1 -type f)
 
       - name: Update Homebrew tap
         if: success()
