@@ -276,9 +276,8 @@ jobs:
           merge-multiple: true
 
       - name: Install cargo-dist
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist@0.28.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/latest/download/cargo-dist-installer.sh | sh
 
       - name: Create GitHub Release
         env:
