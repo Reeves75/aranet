@@ -306,10 +306,25 @@ jobs:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [ -n "$HOMEBREW_TAP_TOKEN" ]; then
-            cargo dist plan --tag="${{ github.ref_name }}" --artifacts=global --output-format=json > plan.json
-            echo "Homebrew formula would be updated here"
-            # The actual update happens via cargo-dist's homebrew installer
+            # Download the formula from the release
+            if [ -f "target/distrib/aranet-cli.rb" ]; then
+              echo "Found Homebrew formula in artifacts"
+
+              # Clone the tap repo and update the formula
+              git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/cameronrye/homebrew-aranet.git /tmp/homebrew-aranet
+              cp target/distrib/aranet-cli.rb /tmp/homebrew-aranet/Formula/aranet.rb
+
+              cd /tmp/homebrew-aranet
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add Formula/aranet.rb
+              git commit -m "Update aranet formula to ${{ github.ref_name }}" || echo "No changes to commit"
+              git push origin main
+
+              echo "Homebrew tap updated successfully"
+            else
+              echo "No Homebrew formula found in artifacts, skipping"
+            fi
           else
             echo "HOMEBREW_TAP_TOKEN not set, skipping Homebrew tap update"
           fi
-
