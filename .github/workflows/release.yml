@@ -44,9 +44,8 @@ jobs:
           submodules: recursive
 
       - name: Install cargo-dist
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist@0.28.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/latest/download/cargo-dist-installer.sh | sh
 
       - name: Run cargo-dist plan
         id: plan
@@ -99,9 +98,8 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install cargo-dist
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist@0.28.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/latest/download/cargo-dist-installer.sh | sh
 
       - name: Build artifacts
         run: cargo dist build --tag="${{ github.ref_name }}" --target="${{ matrix.target }}"
