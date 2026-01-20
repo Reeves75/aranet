@@ -17,11 +17,11 @@ class Aranet < Formula
   on_macos do
     on_arm do
       url "https://github.com/cameronrye/aranet/releases/download/v0.1.8/aranet-cli-aarch64-apple-darwin.tar.xz"
-      sha256 "ee54d88ddd2de98bab1e27a468cd4e14fb758dd1fe75ba4216eac848c8bd8022"
+      sha256 "f02fb9936f252311d7f656eaedfdec5365e6e9be66e37e21621c3feafecef073"
     end
     on_intel do
       url "https://github.com/cameronrye/aranet/releases/download/v0.1.8/aranet-cli-x86_64-apple-darwin.tar.xz"
-      sha256 "dedaea9286b28ed4a863197c49b17024dbcb14240a4353d9d42e625fc6915953"
+      sha256 "cf5383156e566540880b4e76d3d104b673783f09e67b5fe469c0744fef397ce6"
     end
   end
 
