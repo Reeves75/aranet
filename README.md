@@ -11,12 +11,16 @@
 </p>
 Connect to your Aranet devices via Bluetooth LE to read measurements, download history, and monitor air quality.
 
+<p align="center">
+
 [![CI](https://github.com/cameronrye/aranet/workflows/CI/badge.svg)](https://github.com/cameronrye/aranet/actions)
 [![codecov](https://codecov.io/gh/cameronrye/aranet/graph/badge.svg)](https://codecov.io/gh/cameronrye/aranet)
 [![crates.io](https://img.shields.io/crates/v/aranet-cli.svg)](https://crates.io/crates/aranet-cli)
 [![docs.rs](https://docs.rs/aranet-core/badge.svg)](https://docs.rs/aranet-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.90%2B-orange.svg)](https://www.rust-lang.org)
+
+</p>
 
 ## Features
 
@@ -161,6 +165,25 @@ Contributions are welcome! Please check the [open issues](https://github.com/cam
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Looking to Contribute?
+
+Here are some features and improvements that would be great additions to the project:
+
+| Feature | Description | Difficulty |
+|---------|-------------|------------|
+| Aranet2 history download | Implement history data retrieval for Aranet2 devices | Medium |
+| Aranet Radiation history | Complete history download support for Aranet Radiation sensors | Medium |
+| Home Assistant integration | Create a Home Assistant custom component using aranet-core | Medium |
+| Prometheus exporter | Add metrics endpoint for Prometheus/Grafana monitoring | Easy |
+| MQTT publisher | Publish readings to MQTT broker for IoT integration | Easy |
+| InfluxDB export | Direct export to InfluxDB time-series database | Easy |
+| Web dashboard | Complete the aranet-wasm module for browser-based monitoring | Hard |
+| Calibration support | Add device calibration commands for CO2 sensors | Medium |
+| Notification system | Desktop notifications when thresholds are exceeded | Easy |
+| Data visualization | Enhanced charting and trend analysis in TUI/GUI | Medium |
+
+If you're interested in tackling any of these, please open an issue to discuss your approach before starting work. We're happy to provide guidance and answer questions!
 
 ## License
 
