@@ -35,7 +35,7 @@ use tracing::{info, warn};
 use aranet_core::messages::{Command, SensorEvent};
 
 /// Embedded icon PNG data (64x64 RGBA)
-const ICON_PNG: &[u8] = include_bytes!("../../../../assets/aranet-icon.png");
+const ICON_PNG: &[u8] = include_bytes!("../../assets/aranet-icon.png");
 
 /// Load the application icon from embedded PNG data.
 fn load_icon() -> Option<Arc<IconData>> {

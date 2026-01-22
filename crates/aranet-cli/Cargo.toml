@@ -1,6 +1,6 @@
 [package]
 name = "aranet-cli"
-version = "0.1.9"
+version = "0.1.10"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -9,6 +9,7 @@ description = "Command-line interface for Aranet environmental sensors"
 readme = "README.md"
 keywords = ["aranet", "ble", "bluetooth", "sensors", "cli"]
 categories = ["command-line-utilities", "hardware-support"]
+include = ["src/**/*", "Cargo.toml", "README.md", "assets/**/*"]
 
 [[bin]]
 name = "aranet"

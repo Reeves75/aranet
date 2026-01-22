@@ -46,7 +46,7 @@ impl From<tray_icon::menu::Error> for TrayError {
 }
 
 /// Embedded icon PNG data (same as main app icon)
-const ICON_PNG: &[u8] = include_bytes!("../../../../assets/aranet-icon.png");
+const ICON_PNG: &[u8] = include_bytes!("../../assets/aranet-icon.png");
 
 /// Commands that can be sent from the tray to the main app.
 #[derive(Debug, Clone)]
