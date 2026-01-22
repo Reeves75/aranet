@@ -1,0 +1,150 @@
+---
+title: Downloads
+description: Download Aranet applications for macOS, Linux, and Windows.
+---
+
+import { Card, CardGrid, Tabs, TabItem, Aside, Badge } from '@astrojs/starlight/components';
+
+<Badge text="v0.1.9" variant="success" /> Latest Release
+
+Download pre-built binaries for the Aranet CLI, Terminal UI (TUI), and Desktop GUI applications.
+
+## Desktop Application (GUI)
+
+The native desktop application with real-time monitoring, charts, and multi-device support.
+
+<Tabs>
+  <TabItem label="macOS">
+    <CardGrid>
+      <Card title="macOS (Apple Silicon)" icon="apple">
+        **Recommended for M1/M2/M3 Macs**
+        
+        [Download DMG](https://github.com/cameronrye/aranet/releases/latest/download/Aranet-aarch64-apple-darwin.dmg)
+        
+        <small>[tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-aarch64-apple-darwin.tar.xz) | [checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-aarch64-apple-darwin.tar.xz.sha256)</small>
+      </Card>
+      <Card title="macOS (Intel)" icon="apple">
+        **For Intel-based Macs**
+        
+        [Download DMG](https://github.com/cameronrye/aranet/releases/latest/download/Aranet-x86_64-apple-darwin.dmg)
+        
+        <small>[tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-apple-darwin.tar.xz) | [checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-apple-darwin.tar.xz.sha256)</small>
+      </Card>
+    </CardGrid>
+  </TabItem>
+  <TabItem label="Windows">
+    <Card title="Windows (x86_64)" icon="seti:windows">
+      **For Windows 10/11**
+      
+      [Download ZIP](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-pc-windows-msvc.zip)
+      
+      <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-pc-windows-msvc.zip.sha256)</small>
+    </Card>
+  </TabItem>
+  <TabItem label="Linux">
+    <Card title="Linux (x86_64)" icon="linux">
+      **For x86_64 Linux distributions**
+      
+      [Download tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-unknown-linux-gnu.tar.xz)
+      
+      <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-gui-x86_64-unknown-linux-gnu.tar.xz.sha256)</small>
+    </Card>
+  </TabItem>
+</Tabs>
+
+## Command-Line Interface (CLI)
+
+The scriptable CLI for reading sensor data, downloading history, and device configuration.
+
+<Tabs>
+  <TabItem label="macOS">
+    <CardGrid>
+      <Card title="macOS (Apple Silicon)" icon="apple">
+        [Download tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-aarch64-apple-darwin.tar.xz)
+        
+        <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-aarch64-apple-darwin.tar.xz.sha256)</small>
+      </Card>
+      <Card title="macOS (Intel)" icon="apple">
+        [Download tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-apple-darwin.tar.xz)
+        
+        <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-apple-darwin.tar.xz.sha256)</small>
+      </Card>
+    </CardGrid>
+  </TabItem>
+  <TabItem label="Windows">
+    <Card title="Windows (x86_64)" icon="seti:windows">
+      [Download ZIP](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-pc-windows-msvc.zip)
+      
+      <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-pc-windows-msvc.zip.sha256)</small>
+    </Card>
+  </TabItem>
+  <TabItem label="Linux">
+    <Card title="Linux (x86_64)" icon="linux">
+      [Download tar.xz](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-unknown-linux-gnu.tar.xz)
+      
+      <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-x86_64-unknown-linux-gnu.tar.xz.sha256)</small>
+    </Card>
+  </TabItem>
+</Tabs>
+
+## Quick Install Scripts
+
+Install the CLI automatically using the platform installer scripts:
+
+<Tabs>
+  <TabItem label="macOS/Linux">
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-installer.sh | sh
+```
+  </TabItem>
+  <TabItem label="Windows">
+```powershell
+irm https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-installer.ps1 | iex
+```
+  </TabItem>
+  <TabItem label="Homebrew">
+```bash
+brew tap cameronrye/aranet
+brew install aranet
+```
+  </TabItem>
+</Tabs>
+
+## Checksums
+
+All releases include SHA256 checksums for verification:
+
+```bash
+# Download and verify (example for macOS Apple Silicon CLI)
+curl -LO https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-aarch64-apple-darwin.tar.xz
+curl -LO https://github.com/cameronrye/aranet/releases/latest/download/aranet-cli-aarch64-apple-darwin.tar.xz.sha256
+sha256sum -c aranet-cli-aarch64-apple-darwin.tar.xz.sha256
+```
+
+<Aside type="tip">
+  View all releases and release notes on the [GitHub Releases](https://github.com/cameronrye/aranet/releases) page.
+</Aside>
+
+## Source Code
+
+Build from source or download the source archive:
+
+<CardGrid>
+  <Card title="Source Archive" icon="document">
+    [source.tar.gz](https://github.com/cameronrye/aranet/releases/latest/download/source.tar.gz)
+    
+    <small>[checksum](https://github.com/cameronrye/aranet/releases/latest/download/source.tar.gz.sha256)</small>
+  </Card>
+  <Card title="Git Repository" icon="github">
+    ```bash
+    git clone https://github.com/cameronrye/aranet.git
+    cd aranet && cargo build --release
+    ```
+  </Card>
+</CardGrid>
+
+---
+
+Made with ❤️ by [Cameron Rye](https://rye.dev/)
+

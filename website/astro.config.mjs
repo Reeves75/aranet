@@ -28,6 +28,7 @@ export default defineConfig({
             { slug: 'docs/getting-started' },
             { slug: 'docs/installation' },
             { slug: 'docs/quick-start' },
+            { slug: 'docs/downloads' },
           ],
         },
         {
