@@ -28,6 +28,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libxkbcommon-dev \
+            libxdo-dev \
             libssl-dev
 
       - name: Install Rust 1.90 stable
@@ -58,6 +59,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libxkbcommon-dev \
+            libxdo-dev \
             libssl-dev
 
       - name: Install Rust 1.90 stable with components
@@ -89,6 +91,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libxkbcommon-dev \
+            libxdo-dev \
             libssl-dev
 
       - name: Install Rust 1.90 stable
@@ -116,6 +119,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
             libxkbcommon-dev \
+            libxdo-dev \
             libssl-dev
 
       - name: Install Rust 1.90 stable with llvm-tools
