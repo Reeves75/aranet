@@ -175,15 +175,27 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Build the GUI app (cargo-bundle creates .exe with embedded resources)
-          cargo bundle --release --package aranet-gui --target ${{ matrix.target }}
-
-          # Find the output
-          $exe = Get-ChildItem -Recurse -Filter "aranet-gui.exe" | Where-Object { $_.DirectoryName -notmatch "deps" } | Select-Object -First 1
+          # Note: cargo bundle doesn't support Windows .exe bundles
+          # The GUI binary is already built by cargo dist, just copy it
+          $exe = Get-ChildItem -Path "target/${{ matrix.target }}/release" -Filter "aranet-gui.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($exe) {
-            Write-Host "Built: $($exe.FullName)"
+            Write-Host "Found GUI binary: $($exe.FullName)"
             # Copy to distrib folder
-            Copy-Item $exe.FullName -Destination "target/distrib/aranet-gui-${{ matrix.target }}.exe"
+            $distDir = "target/distrib"
+            if (-not (Test-Path $distDir)) {
+              New-Item -ItemType Directory -Path $distDir -Force | Out-Null
+            }
+            Copy-Item $exe.FullName -Destination "$distDir/aranet-gui-${{ matrix.target }}.exe"
+            Write-Host "Copied to: $distDir/aranet-gui-${{ matrix.target }}.exe"
+          } else {
+            Write-Host "GUI binary not found in target/${{ matrix.target }}/release, checking distrib..."
+            # It may already be in distrib from cargo dist
+            $existing = Get-ChildItem -Path "target/distrib" -Filter "aranet-gui*" -ErrorAction SilentlyContinue
+            if ($existing) {
+              Write-Host "Found in distrib: $($existing.Name)"
+            } else {
+              Write-Host "No GUI binary found - this is expected if aranet-gui is not built on Windows"
+            }
           }
 
       # Apple code signing and notarization for macOS
