@@ -6,7 +6,6 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Native desktop GUI for Aranet environmental sensors"
-publish = false
 
 [[bin]]
 name = "aranet-gui"
