@@ -136,6 +136,7 @@ pub struct AranetApp {
     /// Whether to minimize to tray instead of quitting when closing window.
     close_to_tray: bool,
     /// Whether running in demo mode with mock data.
+    #[allow(dead_code)]
     demo_mode: bool,
     /// Path to save screenshot (if taking screenshot).
     screenshot_path: Option<std::path::PathBuf>,
@@ -577,26 +578,26 @@ impl eframe::App for AranetApp {
                 None
             });
 
-            if let Some(image) = screenshot_image {
-                if let Some(ref path) = self.screenshot_path {
-                    // Save the screenshot
-                    let pixels = image.as_raw();
-                    let size = image.size;
-                    if let Err(e) = image::save_buffer(
-                        path,
-                        pixels,
-                        size[0] as u32,
-                        size[1] as u32,
-                        image::ColorType::Rgba8,
-                    ) {
-                        tracing::error!("Failed to save screenshot: {}", e);
-                    } else {
-                        info!("Screenshot saved to {:?}", path);
-                    }
-                    // Exit after saving screenshot
-                    ctx.send_viewport_cmd(ViewportCommand::Close);
-                    return;
+            if let Some(image) = screenshot_image
+                && let Some(ref path) = self.screenshot_path
+            {
+                // Save the screenshot
+                let pixels = image.as_raw();
+                let size = image.size;
+                if let Err(e) = image::save_buffer(
+                    path,
+                    pixels,
+                    size[0] as u32,
+                    size[1] as u32,
+                    image::ColorType::Rgba8,
+                ) {
+                    tracing::error!("Failed to save screenshot: {}", e);
+                } else {
+                    info!("Screenshot saved to {:?}", path);
                 }
+                // Exit after saving screenshot
+                ctx.send_viewport_cmd(ViewportCommand::Close);
+                return;
             }
 
             // Request screenshot after delay frames
